@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
+import { AdminService } from '../services/AdminService';
 import { socketClient } from '../services/SocketService';
 import ThemeCustomizer from './ThemeCustomizer';
+import AdminDisplayName, { AdminRainbowCircle } from './AdminDisplayName';
+import AdminMessageInboxModal from './AdminMessageInboxModal';
 import friendsIcon from '../assets/friends.svg';
 
 export default function Sidebar({ username }) {
@@ -12,6 +15,8 @@ export default function Sidebar({ username }) {
     const [userRating, setUserRating] = useState(localStorage.getItem('rating') ? Number(localStorage.getItem('rating')) : null);
     const [displayUsername, setDisplayUsername] = useState(username || localStorage.getItem('username') || 'Khách');
     const [sidebarAvatar, setSidebarAvatar] = useState('👤');
+    const [isInboxOpen, setIsInboxOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
@@ -27,6 +32,28 @@ export default function Sidebar({ username }) {
     const token = localStorage.getItem('accessToken');
     const payload = token ? AuthService.parseToken(token) : null;
     const isAdmin = payload?.role === 'ROLE_ADMIN';
+
+    const fetchUnreadCount = async () => {
+        if (payload?.userId) {
+            try {
+                const msgs = await AdminService.getUserInbox(payload.userId);
+                setUnreadCount(msgs.filter(m => !m.read).length);
+            } catch (err) {
+                console.error('Failed to check admin inbox messages:', err);
+            }
+        }
+    };
+
+    useEffect(() => {
+        fetchUnreadCount();
+        const handleMsgUpdate = () => fetchUnreadCount();
+        window.addEventListener('admin-direct-message-update', handleMsgUpdate);
+        window.addEventListener('admin-inbox-updated', handleMsgUpdate);
+        return () => {
+            window.removeEventListener('admin-direct-message-update', handleMsgUpdate);
+            window.removeEventListener('admin-inbox-updated', handleMsgUpdate);
+        };
+    }, [payload?.userId]);
 
     useEffect(() => {
         if (username) {
@@ -114,6 +141,35 @@ export default function Sidebar({ username }) {
                         <img src={friendsIcon} alt="Friends" style={{ width: '24px', height: '24px' }} />
                     </span> Bạn bè
                 </a>
+                <a 
+                    href="#" 
+                    className="nav-item"
+                    onClick={(e) => { e.preventDefault(); setIsInboxOpen(true); }}
+                    title="Hộp thư thông báo"
+                >
+                    <span className="icon" style={{ position: 'relative' }}>
+                        🔔
+                        {unreadCount > 0 && (
+                            <span className="notification-badge-bubble">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                    </span>
+                    <span>Tin nhắn</span>
+                    {unreadCount > 0 && (
+                        <span style={{
+                            marginLeft: 'auto',
+                            background: '#ef4444',
+                            color: '#ffffff',
+                            fontSize: '0.68rem',
+                            padding: '1px 6px',
+                            borderRadius: '10px',
+                            fontWeight: 'bold'
+                        }}>
+                            {unreadCount}
+                        </span>
+                    )}
+                </a>
                 {isAdmin && (
                     <a 
                         href="#" 
@@ -130,11 +186,26 @@ export default function Sidebar({ username }) {
                     <input type="text" placeholder="Tìm kiếm" />
                 </div>
                 <div className="user-profile">
-                    <div className="avatar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.25rem' }}>
-                        {sidebarAvatar}
-                    </div>
+                    {isAdmin ? (
+                        <div className="admin-avatar-rainbow-ring">
+                            <div className="avatar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.25rem' }}>
+                                {sidebarAvatar}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="avatar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.25rem' }}>
+                            {sidebarAvatar}
+                        </div>
+                    )}
                     <div className="user-details" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, marginLeft: '10px' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{displayUsername}</span>
+                        <AdminDisplayName
+                            username={displayUsername}
+                            role={payload?.role}
+                            isAdmin={isAdmin}
+                            showBadge={false}
+                            size="sm"
+                            nameStyle={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '600', fontSize: '0.85rem' }}
+                        />
                         {userRating !== null && (
                             <span className="user-rating" style={{ fontSize: '0.75rem', color: '#81b64c', fontWeight: 'bold', marginTop: '2px' }}>⭐ {userRating} ELO</span>
                         )}
@@ -145,6 +216,13 @@ export default function Sidebar({ username }) {
                     <span className="icon">🚪</span> Đăng xuất
                 </button>
             </div>
+
+            <AdminMessageInboxModal
+                userId={payload?.userId}
+                isOpen={isInboxOpen}
+                onClose={() => setIsInboxOpen(false)}
+                onRefreshCount={fetchUnreadCount}
+            />
         </div>
     );
 }

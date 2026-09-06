@@ -9,6 +9,7 @@ import { socketClient } from '../services/SocketService';
 import api from '../services/api';
 import '../index.css';
 import Sidebar from '../components/Sidebar';
+import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
 
 const getFlagEmoji = (code) => {
     if (!code || code.length !== 2) return '🇻🇳';
@@ -17,7 +18,7 @@ const getFlagEmoji = (code) => {
         const firstChar = codeUpper.charCodeAt(0) - 65 + 0x1F1E6;
         const secondChar = codeUpper.charCodeAt(1) - 65 + 0x1F1E6;
         return String.fromCodePoint(firstChar, secondChar);
-    } catch (e) {
+    } catch {
         return '🇻🇳';
     }
 };
@@ -27,6 +28,7 @@ export default function MainMenu() {
     const location = useLocation();
     const boardRef = useRef(null);
     const [username, setUsername] = useState(localStorage.getItem('username') || 'Khách');
+    const [myRole, setMyRole] = useState(null);
     const [rating, setRating] = useState(Number(localStorage.getItem('rating')) || 1200);
     const [countryCode, setCountryCode] = useState(localStorage.getItem('countryCode') || 'VN');
     const [friends, setFriends] = useState([]);
@@ -97,6 +99,7 @@ export default function MainMenu() {
 
             const payload = AuthService.parseToken(token);
             if (payload) {
+                setMyRole(payload.role || null);
                 if (!localStorage.getItem('username')) {
                     setUsername(payload.username || payload.sub || 'Người chơi');
                 }
@@ -374,9 +377,11 @@ export default function MainMenu() {
                 <div className="board-container">
                     <div id="main-menu-board" className="chess-board-wrapper"></div>
                     <div className="player-info-bottom">
-                        <div className="avatar-small"><span className="icon">👤</span></div>
+                        <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ borderRadius: '4px' }}>
+                            <span className="icon">👤</span>
+                        </div>
                         <span className="username" style={{ textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {username} 
+                            <AdminDisplayName username={username} role={myRole} nameStyle={{ fontWeight: '600' }} />
                             <span style={{ color: '#81b64c', fontWeight: 'bold', fontSize: '0.9rem' }}>({rating})</span> 
                             <span className="flag">{getFlagEmoji(countryCode)}</span>
                         </span>
@@ -443,7 +448,7 @@ export default function MainMenu() {
                                             <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', background: '#4ade80', borderRadius: '50%', border: '2px solid var(--bg-dark)' }}></div>
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{friend.username}</span>
+                                            <AdminDisplayName username={friend.username} role={friend.role} nameStyle={{ fontSize: '0.9rem', fontWeight: '600' }} />
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{friend.rating}</span>
                                         </div>
                                     </div>

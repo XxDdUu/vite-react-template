@@ -9,6 +9,7 @@ import Sidebar from '../components/Sidebar';
 import friendsIcon from '../assets/friends.svg';
 import PendingFriendModal from '../components/friend/PendingFriendModal';
 import SearchFriendModal from '../components/friend/SearchFriendModal';
+import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
 
 export default function Friends() {
     const navigate = useNavigate();
@@ -258,7 +259,7 @@ export default function Friends() {
                                     .map(friend => (
                                         <div key={friend.userId} className="friend-item">
                                             <div className="friend-info" onClick={() => handlePlayerClick(friend.userId)} style={{ cursor: 'pointer' }}>
-                                                <div className="friend-avatar">
+                                                <div className={`friend-avatar ${checkIsAdmin(friend.role, friend.username) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ borderRadius: '50%' }}>
                                                     {friend.username.charAt(0).toUpperCase()}
                                                     <div style={{
                                                         position: 'absolute', bottom: '2px', right: '2px',
@@ -269,7 +270,11 @@ export default function Friends() {
                                                 </div>
                                                 <div className="friend-details">
                                                     <div className="friend-name-row">
-                                                        <span style={{ fontWeight: 600 }}>{friend.username}</span>
+                                                        <AdminDisplayName
+                                                            username={friend.username}
+                                                            role={friend.role}
+                                                            nameStyle={{ fontWeight: 600 }}
+                                                        />
                                                         <span className="flag">🇻🇳</span>
                                                     </div>
                                                     <span className="friend-status-text">
@@ -431,19 +436,26 @@ export default function Friends() {
                         {/* Header info */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{
-                                    width: '64px', height: '64px', borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                                    display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                    fontSize: '2rem', color: '#ffffff', fontWeight: 'bold'
-                                }}>
-                                    {selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US'}
+                                <div className={checkIsAdmin(selectedPlayerStats.role, selectedPlayerStats.username) ? 'admin-avatar-rainbow-ring' : ''} style={{ borderRadius: '50%' }}>
+                                    <div style={{
+                                        width: '64px', height: '64px', borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                        fontSize: '2rem', color: '#ffffff', fontWeight: 'bold'
+                                    }}>
+                                        {selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US'}
+                                    </div>
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        {selectedPlayerStats.username}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <AdminDisplayName
+                                            username={selectedPlayerStats.username}
+                                            role={selectedPlayerStats.role}
+                                            showBadge={selectedPlayerStats.role === 'ROLE_ADMIN'}
+                                            nameStyle={{ fontSize: '1.4rem', fontWeight: 'bold' }}
+                                        />
                                         <span style={{ fontSize: '1.25rem' }}>{getFlagEmoji(selectedPlayerStats.countryCode)}</span>
-                                    </h3>
+                                    </div>
                                     <span style={{ display: 'inline-block', fontSize: '0.85rem', color: '#81b64c', fontWeight: 'bold', marginTop: '4px', background: 'rgba(129, 182, 76, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                                         ⭐ {selectedPlayerStats.rating} ELO
                                     </span>

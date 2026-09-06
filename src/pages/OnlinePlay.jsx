@@ -5,6 +5,8 @@ import { socketClient } from '../services/SocketService';
 import { AuthService } from '../services/AuthService';
 import { FriendService } from '../services/FriendService';
 import Sidebar from '../components/Sidebar';
+import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
+import EmojiBox from '../components/EmojiBox';
 import '../index.css';
 
 const MATCH_STATES = {
@@ -24,6 +26,7 @@ export default function OnlinePlay() {
     const isTournament = location.state?.gameStartMsg?.isTournament || false;
 
     const [username, setUsername] = useState('Người chơi');
+    const [myRole, setMyRole] = useState(null);
     const [matchState, setMatchState] = useState(MATCH_STATES.INITIALIZING);
     const [matchType, setMatchType] = useState(initialMatchType);
     const [status, setStatus] = useState('Đang kết nối...');
@@ -42,6 +45,7 @@ export default function OnlinePlay() {
     // Chat State
     const [chatMessages, setChatMessages] = useState([]);
     const [chatInput, setChatInput] = useState('');
+    const [showEmojiBox, setShowEmojiBox] = useState(false);
 
     // Timer State
     const [whiteTime, setWhiteTime] = useState(600);
@@ -87,6 +91,7 @@ export default function OnlinePlay() {
             const payload = AuthService.parseToken(token);
             if (payload) {
                 setUsername(payload.username || payload.sub || 'Người chơi');
+                setMyRole(payload.role || null);
             }
 
             socketClient.addListener(handleSocketMessage);
@@ -674,10 +679,14 @@ export default function OnlinePlay() {
                             {/* Opponent Info Bar */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div className="avatar-small" style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}><span className="icon">👤</span></div>
-                                    <span style={{ fontWeight: 'bold', fontSize: '1rem', color: 'var(--text-primary)' }}>
-                                        {opponent?.name || 'Đối thủ'}
-                                    </span>
+                                    <div className={`avatar-small ${checkIsAdmin(opponent?.role, opponent?.name) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
+                                        <span className="icon">👤</span>
+                                    </div>
+                                    <AdminDisplayName
+                                        username={opponent?.name || 'Đối thủ'}
+                                        role={opponent?.role}
+                                        nameStyle={{ fontWeight: 'bold', fontSize: '1rem', color: 'var(--text-primary)' }}
+                                    />
                                     {matchState === MATCH_STATES.PLAYING && (
                                         <button
                                             onClick={handleAddFriend}
@@ -699,10 +708,17 @@ export default function OnlinePlay() {
                             {/* Your Info Bar */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div className="avatar-small" style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}><span className="icon">👤</span></div>
-                                    <span style={{ fontWeight: 'bold', fontSize: '1rem', color: 'var(--text-primary)', textTransform: 'capitalize' }}>
-                                        {username} <span className="flag">🇻🇳</span>
-                                    </span>
+                                    <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
+                                        <span className="icon">👤</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <AdminDisplayName
+                                            username={username}
+                                            role={myRole}
+                                            nameStyle={{ fontWeight: 'bold', fontSize: '1rem', color: 'var(--text-primary)', textTransform: 'capitalize' }}
+                                        />
+                                        <span className="flag">🇻🇳</span>
+                                    </div>
                                 </div>
                                 <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '1.2rem', color: isMyTurn() ? '#4ade80' : 'white', fontWeight: 'bold' }}>
                                     {formatTime(myTime)}
@@ -783,14 +799,61 @@ export default function OnlinePlay() {
                             <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem' }}>💬 Trò chuyện</h3>
                             <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '10px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {chatMessages.length === 0 && <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '10px' }}>Gửi lời chào tới đối thủ...</span>}
-                                {chatMessages.map((msg, idx) => (
-                                    <div key={idx} style={{ alignSelf: msg.sender === 'You' ? 'flex-end' : 'flex-start', background: msg.sender === 'You' ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid', borderColor: msg.sender === 'You' ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '10px', maxWidth: '85%' }}>
-                                        <span style={{ fontSize: '0.75rem', display: 'block', color: msg.sender === 'You' ? '#60a5fa' : 'var(--text-muted)', fontWeight: 'bold', marginBottom: '2px' }}>{msg.sender === 'You' ? 'Bạn' : msg.sender}</span>
-                                        <span style={{ fontSize: '0.85rem', wordBreak: 'break-word', color: 'var(--text-primary)' }}>{msg.text}</span>
-                                    </div>
-                                ))}
+                                {chatMessages.map((msg, idx) => {
+                                    const isSenderMe = msg.sender === 'You' || msg.sender === 'Bạn';
+                                    const senderDisplayName = isSenderMe ? 'Bạn' : msg.sender;
+                                    const isAdminSender = isSenderMe 
+                                        ? checkIsAdmin(myRole, username) 
+                                        : checkIsAdmin(msg.role || (opponent?.name === msg.sender ? opponent?.role : null), msg.sender);
+
+                                    return (
+                                        <div key={idx} style={{ alignSelf: isSenderMe ? 'flex-end' : 'flex-start', background: isSenderMe ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid', borderColor: isSenderMe ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '10px', maxWidth: '85%' }}>
+                                            <span style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: isSenderMe ? '#60a5fa' : 'var(--text-muted)', fontWeight: 'bold', marginBottom: '2px' }}>
+                                                <AdminDisplayName
+                                                    username={senderDisplayName}
+                                                    isAdmin={isAdminSender}
+                                                    size="sm"
+                                                    nameStyle={{ fontWeight: 'bold', color: isSenderMe ? '#60a5fa' : 'inherit' }}
+                                                />
+                                            </span>
+                                            <span style={{ fontSize: '0.85rem', wordBreak: 'break-word', color: 'var(--text-primary)' }}>{msg.text}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', position: 'relative' }}>
+                                {showEmojiBox && (
+                                    <EmojiBox
+                                        onSelectEmoji={(emoji) => {
+                                            setChatInput(prev => prev + emoji);
+                                        }}
+                                        onSelectPhrase={(phrase) => {
+                                            setChatInput(phrase);
+                                        }}
+                                        onClose={() => setShowEmojiBox(false)}
+                                    />
+                                )}
+                                <button
+                                    type="button"
+                                    className="emoji-toggle-btn"
+                                    onClick={() => setShowEmojiBox(prev => !prev)}
+                                    title="Biểu cảm và Tin nhanh"
+                                    style={{
+                                        background: showEmojiBox ? 'rgba(59, 130, 246, 0.35)' : 'rgba(255, 255, 255, 0.05)',
+                                        border: `1px solid ${showEmojiBox ? 'rgba(59, 130, 246, 0.6)' : 'rgba(255, 255, 255, 0.1)'}`,
+                                        borderRadius: '8px',
+                                        fontSize: '1.25rem',
+                                        padding: '0 12px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.15s ease',
+                                        flexShrink: 0
+                                    }}
+                                >
+                                    😊
+                                </button>
                                 <input
                                     type="text"
                                     className="custom-input"

@@ -5,6 +5,7 @@ import { AuthService } from '../services/AuthService';
 import '../index.css';
 import Sidebar from '../components/Sidebar';
 import { FriendService } from '../services/FriendService';
+import AdminDisplayName from '../components/AdminDisplayName';
 
 export default function Leaderboard() {
     const navigate = useNavigate();
@@ -158,9 +159,20 @@ export default function Leaderboard() {
                         <span style={{ fontSize: '2rem' }}>🥇</span>
                         <div>
                             <span style={{ display: 'block', fontSize: '0.75rem', color: '#8b92a5', textTransform: 'uppercase', letterSpacing: '1px' }}>Kỳ thủ số 1</span>
-                            <strong style={{ display: 'block', fontSize: '1.05rem', color: '#fbbf24', marginTop: '2px' }}>
-                                {topPlayer ? `${topPlayer.username} (${topPlayer.rating})` : 'Chưa có'}
-                            </strong>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                {topPlayer ? (
+                                    <>
+                                        <AdminDisplayName
+                                            username={topPlayer.username}
+                                            role={topPlayer.role}
+                                            nameStyle={{ fontSize: '1.05rem', color: '#fbbf24', fontWeight: 'bold' }}
+                                        />
+                                        <span style={{ color: '#fbbf24', fontSize: '0.9rem', fontWeight: 'bold' }}>({topPlayer.rating})</span>
+                                    </>
+                                ) : (
+                                    <span style={{ color: 'var(--text-muted)' }}>Chưa có</span>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -272,9 +284,12 @@ export default function Leaderboard() {
                                                 <td style={{ padding: '14px 16px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <span style={{ fontSize: '1.25rem' }}>{getFlagEmoji(player.countryCode)}</span>
-                                                        <span style={{ fontWeight: isCurrentUser ? 'bold' : '500', color: isCurrentUser ? '#818cf8' : '#ffffff' }}>
-                                                            {player.username}
-                                                        </span>
+                                                        <AdminDisplayName
+                                                            username={player.username}
+                                                            role={player.role}
+                                                            isAdmin={isCurrentUser && (user?.role === 'ROLE_ADMIN' || user?.isAdmin) ? true : undefined}
+                                                            nameStyle={{ fontWeight: isCurrentUser ? 'bold' : '500', color: isCurrentUser ? '#818cf8' : '#ffffff' }}
+                                                        />
                                                         {isCurrentUser && (
                                                             <span style={{ fontSize: '0.7rem', background: '#818cf8', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>BẠN</span>
                                                         )}
@@ -336,19 +351,26 @@ export default function Leaderboard() {
                         {/* Header info */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{
-                                    width: '64px', height: '64px', borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                                    display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                    fontSize: '2rem', color: '#ffffff', fontWeight: 'bold'
-                                }}>
-                                    {selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US'}
+                                <div className={checkIsAdmin(selectedPlayerStats.role, selectedPlayerStats.username) ? 'admin-avatar-rainbow-ring' : ''} style={{ borderRadius: '50%' }}>
+                                    <div style={{
+                                        width: '64px', height: '64px', borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                        fontSize: '2rem', color: '#ffffff', fontWeight: 'bold'
+                                    }}>
+                                        {selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US'}
+                                    </div>
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        {selectedPlayerStats.username}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <AdminDisplayName
+                                            username={selectedPlayerStats.username}
+                                            role={selectedPlayerStats.role}
+                                            showBadge={selectedPlayerStats.role === 'ROLE_ADMIN'}
+                                            nameStyle={{ fontSize: '1.4rem', fontWeight: 'bold' }}
+                                        />
                                         <span style={{ fontSize: '1.25rem' }}>{getFlagEmoji(selectedPlayerStats.countryCode)}</span>
-                                    </h3>
+                                    </div>
                                     <span style={{ display: 'inline-block', fontSize: '0.85rem', color: '#81b64c', fontWeight: 'bold', marginTop: '4px', background: 'rgba(129, 182, 76, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                                         ⭐ {selectedPlayerStats.rating} ELO
                                     </span>

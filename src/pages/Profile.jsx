@@ -4,6 +4,7 @@ import { UserService } from '../services/UserService';
 import { GameService } from '../services/GameService';
 import { FriendService } from '../services/FriendService';
 import Sidebar from '../components/Sidebar';
+import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
 import '../index.css';
 
 const countryFlags = {
@@ -207,19 +208,27 @@ export default function Profile() {
                         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
                             {/* Profile Picture */}
                             <div style={{ position: 'relative' }}>
-                                <div style={{ width: '90px', height: '90px', borderRadius: '6px', background: '#312e2b', border: '1px solid #403d39', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: '#babfc3', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-                                    {profileAvatar}
+                                <div className={checkIsAdmin(user?.role, user?.username) ? 'admin-avatar-rainbow-ring' : ''} style={{ borderRadius: '10px' }}>
+                                    <div style={{ width: '90px', height: '90px', borderRadius: '8px', background: '#312e2b', border: '1px solid #403d39', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: '#babfc3', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+                                        {profileAvatar}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Player info details */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <h1 style={{ margin: 0, fontSize: '1.8rem', fontWeight: '800', color: 'white', fontFamily: '"Outfit", sans-serif', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    {user?.username}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <AdminDisplayName
+                                        username={user?.username}
+                                        role={user?.role}
+                                        showBadge={user?.role === 'ROLE_ADMIN'}
+                                        size="lg"
+                                        nameStyle={{ fontSize: '1.8rem', fontWeight: '800', fontFamily: '"Outfit", sans-serif' }}
+                                    />
                                     <span style={{ fontSize: '1.4rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} title={countryNames[country] || 'Quốc gia'}>
                                         {countryFlags[country] || '🌐'}
                                     </span>
-                                </h1>
+                                </div>
                                 <div style={{ display: 'flex', gap: '15px', alignItems: 'center', fontSize: '0.85rem', color: '#babfc3', fontWeight: 'bold', flexWrap: 'wrap' }}>
                                     <span>Hệ số ELO: <strong style={{ color: '#81b64c' }}>{stats?.rating || 1200}</strong></span>
                                     <span>•</span>

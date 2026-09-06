@@ -51,6 +51,32 @@ const GlobalSocket = ({ children }) => {
         if (token) {
             socketClient.connect(token);
         }
+
+        const handleGlobalSocketMessage = (data) => {
+            try {
+                const msg = JSON.parse(data);
+                if (msg.type === 'ADMIN_DIRECT_MESSAGE') {
+                    const currentToken = localStorage.getItem('accessToken');
+                    const payload = currentToken ? AuthService.parseToken(currentToken) : null;
+                    if (payload && String(payload.userId) === String(msg.recipientId)) {
+                        const key = `user_inbox_messages_${payload.userId}`;
+                        const inbox = JSON.parse(localStorage.getItem(key) || '[]');
+                        if (!inbox.some(m => m.id === msg.id)) {
+                            inbox.unshift(msg);
+                            localStorage.setItem(key, JSON.stringify(inbox));
+                        }
+                        window.dispatchEvent(new CustomEvent('admin-direct-message-update', { detail: msg }));
+                    }
+                }
+            } catch {
+                // Ignore non-JSON or other socket messages
+            }
+        };
+
+        socketClient.addListener(handleGlobalSocketMessage);
+        return () => {
+            socketClient.removeListener(handleGlobalSocketMessage);
+        };
     }, []);
     return children;
 };

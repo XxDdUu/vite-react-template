@@ -2152,4 +2152,342 @@ div[class*=" chessboard-"] {
     font-weight: 500;
 }
 
+/* ==========================================================================
+   Admin Rainbow Circle & Glow Animations
+   ========================================================================== */
+
+@keyframes rainbow-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes rainbow-text-shimmer {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes pulse-rainbow-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 5px rgba(255, 60, 120, 0.6)) drop-shadow(0 0 10px rgba(70, 180, 255, 0.4));
+    }
+    50% {
+        filter: drop-shadow(0 0 8px rgba(120, 255, 100, 0.7)) drop-shadow(0 0 14px rgba(255, 200, 50, 0.5));
+    }
+}
+
+/* Standalone Rainbow Circle Badge */
+.admin-rainbow-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    border-radius: 50%;
+    position: relative;
+    vertical-align: middle;
+    box-sizing: border-box;
+    padding: 2.5px;
+    background: conic-gradient(
+        from 0deg,
+        #ff0055,
+        #ff7700,
+        #ffdd00,
+        #00e676,
+        #00e5ff,
+        #2979ff,
+        #651fff,
+        #d500f9,
+        #ff0055
+    );
+    animation: rainbow-spin 2.5s linear infinite;
+    box-shadow: 0 0 8px rgba(255, 100, 180, 0.5), 0 0 12px rgba(41, 121, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.admin-rainbow-circle-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #0f1115;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-rainbow-circle-sm {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    padding: 2px;
+}
+
+.admin-rainbow-circle-lg {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 3px;
+}
+
+/* Avatar Rainbow Ring */
+.admin-avatar-rainbow-ring {
+    position: relative;
+    border-radius: 50%;
+    padding: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(
+        from 0deg,
+        #ff0055,
+        #ff7700,
+        #ffdd00,
+        #00e676,
+        #00e5ff,
+        #2979ff,
+        #651fff,
+        #d500f9,
+        #ff0055
+    );
+    animation: rainbow-spin 3s linear infinite;
+    box-shadow: 0 0 12px rgba(255, 0, 128, 0.4), 0 0 16px rgba(0, 229, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.admin-avatar-rainbow-ring > * {
+    border-radius: 50%;
+}
+
+/* Rainbow Text Gradient */
+.admin-rainbow-text {
+    background: linear-gradient(
+        90deg,
+        #ff3366,
+        #ff9933,
+        #ffea00,
+        #00e676,
+        #00e5ff,
+        #2979ff,
+        #a855f7,
+        #ff3366
+    );
+    background-size: 250% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbow-text-shimmer 4s linear infinite;
+    font-weight: 700;
+}
+
+/* Admin Badge Pill */
+.admin-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255, 0, 128, 0.12);
+    border: 1px solid rgba(255, 0, 128, 0.3);
+    color: #ff6090;
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.15);
+}
+
+/* ==========================================================================
+   In-Game Chat Emoji Box Popover
+   ========================================================================== */
+
+.emoji-box-popover {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 8px;
+    width: 320px;
+    max-width: 90vw;
+    background: rgba(18, 20, 28, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(59, 130, 246, 0.15);
+    z-index: 50;
+    overflow: hidden;
+    animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.emoji-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.emoji-box-header span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.emoji-tabs-bar {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    gap: 4px;
+}
+
+.emoji-tab-button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.emoji-tab-button.active {
+    background: rgba(59, 130, 246, 0.25);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.emoji-tab-button:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.emoji-grid-content {
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.emoji-item-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.emoji-item-btn:hover {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: scale(1.18);
+}
+
+.quick-phrases-list {
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.quick-phrase-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quick-phrase-item:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   Admin Direct Messaging Notification Bell & Badges
+   ========================================================================== */
+
+.notification-bell-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.notification-badge-bubble {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    background: linear-gradient(135deg, #ef4444, #f43f5e);
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    border: 1.5px solid #0f1115;
+    animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+
 

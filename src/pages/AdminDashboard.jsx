@@ -5,6 +5,8 @@ import { AdminService } from '../services/AdminService';
 import { TournamentService } from '../services/TournamentService';
 import { ReplayService } from '../services/ReplayService';
 import { AuthService } from '../services/AuthService';
+import AdminDisplayName, { AdminRainbowCircle } from '../components/AdminDisplayName';
+import AdminDirectMessageModal from '../components/admin/AdminDirectMessageModal';
 import '../index.css';
 
 export default function AdminDashboard() {
@@ -15,6 +17,13 @@ export default function AdminDashboard() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     
+    // Direct Messaging state
+    const [isDmModalOpen, setIsDmModalOpen] = useState(false);
+    const [dmTargetUser, setDmTargetUser] = useState(null);
+    const [allDirectMessages, setAllDirectMessages] = useState([]);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+    const [messageSearch, setMessageSearch] = useState('');
+
     // Tournament form fields
     const [tournaments, setTournaments] = useState([]);
     const [selectedTournament, setSelectedTournament] = useState(null);
@@ -30,7 +39,7 @@ export default function AdminDashboard() {
     const [formRegEnd, setFormRegEnd] = useState('');
     const [formStart, setFormStart] = useState('');
 
-    const [activeSection, setActiveSection] = useState('stats'); // stats, users, tournaments, pairings
+    const [activeSection, setActiveSection] = useState('stats'); // stats, users, messages, tournaments, pairings
 
     useEffect(() => {
         const checkToken = async () => {
@@ -49,7 +58,48 @@ export default function AdminDashboard() {
         checkToken();
         loadStats();
         loadTournaments();
+        loadAllDirectMessages();
+
+        const handleDmEvent = () => {
+            loadAllDirectMessages();
+        };
+        window.addEventListener('admin-direct-message-update', handleDmEvent);
+        return () => window.removeEventListener('admin-direct-message-update', handleDmEvent);
     }, [navigate]);
+
+    useEffect(() => {
+        if (activeSection === 'messages') {
+            loadAllDirectMessages();
+        }
+    }, [activeSection]);
+
+    const loadAllDirectMessages = async () => {
+        setLoadingMessages(true);
+        try {
+            const list = await AdminService.getAllDirectMessages();
+            setAllDirectMessages(Array.isArray(list) ? list : []);
+        } catch (err) {
+            console.error("Failed to load direct messages", err);
+            setAllDirectMessages([]);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
+
+    const handleOpenDm = (targetUser) => {
+        if (!targetUser) {
+            setDmTargetUser(null);
+            setIsDmModalOpen(true);
+            return;
+        }
+        const normalizedUser = {
+            ...targetUser,
+            userId: targetUser.userId ?? targetUser.id,
+            username: targetUser.username ?? targetUser.name ?? (targetUser.userId || targetUser.id ? `User #${targetUser.userId || targetUser.id}` : 'Người chơi')
+        };
+        setDmTargetUser(normalizedUser);
+        setIsDmModalOpen(true);
+    };
 
     const loadStats = async () => {
         try {
@@ -196,14 +246,20 @@ export default function AdminDashboard() {
             <Sidebar username={username} />
 
             <div className="friends-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-                <div className="friends-header">
-                    <h1>🛡️ Hệ thống Quản trị (Admin Panel)</h1>
+                <div className="friends-header" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        🛡️ Hệ thống Quản trị (Admin Panel)
+                    </h1>
+                    <AdminRainbowCircle size="lg" />
                 </div>
 
                 {/* Main Navigation tabs */}
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     <button onClick={() => setActiveSection('stats')} className={activeSection === 'stats' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>📊 Thống kê chung</button>
                     <button onClick={() => { setActiveSection('users'); handleSearchUsers(); }} className={activeSection === 'users' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>👥 Quản lý người dùng</button>
+                    <button onClick={() => { setActiveSection('messages'); loadAllDirectMessages(); }} className={activeSection === 'messages' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>
+                        📨 Tin nhắn trực tiếp {allDirectMessages.length > 0 && `(${allDirectMessages.length})`}
+                    </button>
                     <button onClick={() => setActiveSection('tournaments')} className={activeSection === 'tournaments' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>🏆 Quản lý giải đấu</button>
                     <button onClick={() => setActiveSection('pairings')} className={activeSection === 'pairings' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>⚔️ Kết quả cặp đấu</button>
                 </div>
@@ -287,11 +343,36 @@ export default function AdminDashboard() {
                                         onClick={() => handleSelectUser(u.userId)}
                                     >
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                            <div>
-                                                <strong style={{ fontSize: '1rem' }}>{u.username}</strong>
-                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '10px' }}>{u.email}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <AdminDisplayName
+                                                    username={u.username}
+                                                    role={u.role}
+                                                    showBadge={u.role === 'ROLE_ADMIN'}
+                                                    nameStyle={{ fontSize: '1rem', fontWeight: 'bold' }}
+                                                />
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{u.email}</span>
                                             </div>
                                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenDm(u);
+                                                    }}
+                                                    className="secondary-btn"
+                                                    style={{
+                                                        padding: '4px 10px',
+                                                        fontSize: '0.75rem',
+                                                        borderColor: 'rgba(59, 130, 246, 0.4)',
+                                                        color: '#60a5fa',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                    }}
+                                                    title={`Gửi tin nhắn trực tiếp tới ${u.username}`}
+                                                >
+                                                    ✉️ Nhắn tin
+                                                </button>
                                                 <span style={{ color: 'var(--accent-blue-hover)' }}>Elo: {u.rating}</span>
                                                 <span style={{
                                                     padding: '3px 8px',
@@ -315,7 +396,15 @@ export default function AdminDashboard() {
                                 <div className="glass-panel" style={{ width: '100%' }}>
                                     <h2>Hồ sơ người dùng</h2>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.9rem' }}>
-                                        <div>Tên tài khoản: <strong>{selectedUser.username}</strong></div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <span>Tên tài khoản:</span>
+                                            <AdminDisplayName
+                                                username={selectedUser.username}
+                                                role={selectedUser.role}
+                                                showBadge={selectedUser.role === 'ROLE_ADMIN'}
+                                                nameStyle={{ fontWeight: 'bold' }}
+                                            />
+                                        </div>
                                         <div>Email: <strong>{selectedUser.email}</strong></div>
                                         <div>Vai trò: <strong>{selectedUser.role}</strong></div>
                                         <div>Trạng thái: <strong style={{ color: selectedUser.isBanned ? '#ef4444' : '#4ade80' }}>
@@ -324,7 +413,15 @@ export default function AdminDashboard() {
                                         <div>Quốc tịch: <span>{selectedUser.countryCode}</span></div>
                                         <div>Elo hiện tại: <strong>{selectedUser.rating}</strong></div>
                                         
-                                        <div style={{ marginTop: '20px' }}>
+                                        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <button
+                                                type="button"
+                                                className="primary-btn"
+                                                style={{ width: '100%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                                onClick={() => handleOpenDm(selectedUser)}
+                                            >
+                                                💬 Gửi tin nhắn trực tiếp
+                                            </button>
                                             {selectedUser.isBanned ? (
                                                 <button className="primary-btn" style={{ width: '100%', background: '#10b981' }} onClick={() => handleUnbanUser(selectedUser.userId)}>
                                                     Mở khóa tài khoản
@@ -503,7 +600,199 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 )}
+
+                {/* Direct Messaging Section */}
+                {activeSection === 'messages' && (() => {
+                    const safeDirectMessages = Array.isArray(allDirectMessages) ? allDirectMessages : [];
+                    const filteredMessages = safeDirectMessages.filter(m => {
+                        if (!messageSearch.trim()) return true;
+                        const q = messageSearch.trim().toLowerCase();
+                        const recipient = String(m.recipientUsername || m.receiverUsername || m.recipient?.username || m.receiver?.username || (m.recipientId ? `User #${m.recipientId}` : '')).toLowerCase();
+                        const title = String(m.title || m.subject || '').toLowerCase();
+                        const content = String(m.content || m.message || m.body || '').toLowerCase();
+                        const sender = String(m.senderUsername || m.senderName || '').toLowerCase();
+                        return recipient.includes(q) || title.includes(q) || content.includes(q) || sender.includes(q);
+                    });
+
+                    return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div className="glass-panel" style={{ width: '100%', boxSizing: 'border-box' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                                    <div>
+                                        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>
+                                            📨 Danh sách Tin nhắn Trực tiếp đã gửi ({safeDirectMessages.length})
+                                        </h2>
+                                        <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                            Quản lý và theo dõi toàn bộ tin nhắn do Quản trị viên gửi tới người dùng trong hệ thống
+                                        </p>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenDm(null)}
+                                            className="primary-btn"
+                                            style={{ padding: '8px 16px', fontSize: '0.85rem', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+                                        >
+                                            ➕ Soạn tin nhắn mới
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={loadAllDirectMessages}
+                                            className="secondary-btn"
+                                            style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+                                        >
+                                            🔄 Làm mới
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Search filter for messages */}
+                                <div className="friends-search-container" style={{ marginBottom: '16px' }}>
+                                    <span className="friends-search-icon">🔍</span>
+                                    <input
+                                        type="text"
+                                        placeholder="Lọc tin nhắn theo người nhận, tiêu đề hoặc nội dung..."
+                                        value={messageSearch}
+                                        onChange={(e) => setMessageSearch(e.target.value)}
+                                        className="friends-search-input"
+                                    />
+                                    {messageSearch && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setMessageSearch('')}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-muted)',
+                                                cursor: 'pointer',
+                                                padding: '0 8px',
+                                                fontSize: '0.9rem'
+                                            }}
+                                            title="Xóa tìm kiếm"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Messages list */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {loadingMessages ? (
+                                        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '2rem' }}>⏳</span>
+                                            <span>Đang tải danh sách tin nhắn...</span>
+                                        </div>
+                                    ) : filteredMessages.length > 0 ? (
+                                        filteredMessages.map((msg, idx) => {
+                                            const recipientName = msg.recipientUsername || msg.receiverUsername || msg.recipient?.username || msg.receiver?.username || (msg.recipientId ? `User #${msg.recipientId}` : 'Người chơi');
+                                            const recipientId = msg.recipientId ?? msg.receiverId ?? msg.recipient?.id ?? msg.receiver?.id;
+                                            const msgType = String(msg.type || msg.messageType || msg.category || 'INFO').toUpperCase();
+                                            const dateVal = msg.sentAt || msg.createdAt || msg.timestamp;
+                                            const dateDisplay = dateVal ? new Date(dateVal).toLocaleString('vi-VN') : 'Vừa xong';
+
+                                            return (
+                                                <div
+                                                    key={msg.id || `msg_${idx}`}
+                                                    style={{
+                                                        background: 'rgba(0, 0, 0, 0.25)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        borderRadius: '12px',
+                                                        padding: '16px',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '8px'
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                                            <span style={{ fontSize: '1.2rem' }}>👤</span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Gửi tới:</span>
+                                                                <AdminDisplayName
+                                                                    username={recipientName}
+                                                                    nameStyle={{ fontWeight: 'bold' }}
+                                                                />
+                                                            </div>
+                                                            <span style={{
+                                                                padding: '2px 8px',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 'bold',
+                                                                background: msgType === 'WARNING' ? 'rgba(239, 68, 68, 0.2)' :
+                                                                            msgType === 'ANNOUNCEMENT' ? 'rgba(245, 158, 11, 0.2)' :
+                                                                            msgType === 'CHAT' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                                                color: msgType === 'WARNING' ? '#ef4444' :
+                                                                       msgType === 'ANNOUNCEMENT' ? '#f59e0b' :
+                                                                       msgType === 'CHAT' ? '#10b981' : '#60a5fa'
+                                                            }}>
+                                                                {msgType}
+                                                            </span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                                                {dateDisplay}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenDm({ userId: recipientId, username: recipientName })}
+                                                                className="secondary-btn"
+                                                                style={{ padding: '3px 10px', fontSize: '0.75rem', borderColor: 'rgba(59, 130, 246, 0.4)', color: '#60a5fa' }}
+                                                            >
+                                                                ✉️ Nhắn tiếp
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <strong style={{ fontSize: '0.98rem', color: '#ffffff' }}>
+                                                        {msg.title || msg.subject || 'Thông báo từ Quản trị viên'}
+                                                    </strong>
+                                                    <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
+                                                        {msg.content || msg.message || msg.body || ''}
+                                                    </p>
+                                                </div>
+                                            );
+                                        })
+                                    ) : safeDirectMessages.length === 0 ? (
+                                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '50px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '2.5rem' }}>📭</span>
+                                            <span>Chưa có tin nhắn trực tiếp nào được gửi.</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOpenDm(null)}
+                                                className="primary-btn"
+                                                style={{ marginTop: '10px', padding: '8px 16px', fontSize: '0.85rem' }}
+                                            >
+                                                Soạn tin nhắn đầu tiên
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '2rem' }}>🔍</span>
+                                            <span>Không tìm thấy tin nhắn nào khớp với "{messageSearch}".</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setMessageSearch('')}
+                                                className="secondary-btn"
+                                                style={{ marginTop: '6px', padding: '6px 14px', fontSize: '0.82rem' }}
+                                            >
+                                                Xóa bộ lọc tìm kiếm
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
+
+            <AdminDirectMessageModal
+                user={dmTargetUser}
+                adminUsername={username}
+                isOpen={isDmModalOpen}
+                onClose={() => setIsDmModalOpen(false)}
+                onMessageSent={loadAllDirectMessages}
+            />
         </div>
     );
 }
