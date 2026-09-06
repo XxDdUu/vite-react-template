@@ -33,7 +33,9 @@ Tài liệu này ghi lại các điểm cuối (endpoints) API được định 
 - `POST /api/user/{userId}/messages/{messageId}/read`: Đánh dấu tin nhắn đã đọc.
 - `GET /api/admin/users/{userId}/messages`: Lấy lịch sử tin nhắn trực tiếp giữa Admin và người dùng.
 - `GET /api/admin/messages`: Lấy tất cả tin nhắn trực tiếp đã gửi bởi Admin.
-- `POST /api/admin/messages`: Gửi tin nhắn từ Admin.
+- `POST /api/admin/messages`: Gửi tin nhắn từ Admin (hỗ trợ cả tin nhắn đơn và gửi tất cả người dùng qua `sendToAll: true`).
+- `POST /api/admin/messages/broadcast`: Gửi thông báo toàn hệ thống tới tất cả người dùng.
+- `POST /api/user/messages/broadcast`: Gửi thông báo toàn hệ thống tới tất cả người dùng (Admin).
 
 ## 2. Các API Chưa Sử Dụng (Unused APIs / In-Progress)
 Đây là các API đã được định nghĩa trong lớp Service nhưng chưa thấy được gọi từ giao diện người dùng (hoặc đang trong quá trình phát triển).

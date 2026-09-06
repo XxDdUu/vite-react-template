@@ -5,7 +5,7 @@ import { UserService } from '../services/UserService';
 import { AdminService } from '../services/AdminService';
 import { socketClient } from '../services/SocketService';
 import ThemeCustomizer from './ThemeCustomizer';
-import AdminDisplayName, { AdminRainbowCircle } from './AdminDisplayName';
+import AdminDisplayName from './AdminDisplayName';
 import AdminMessageInboxModal from './AdminMessageInboxModal';
 import friendsIcon from '../assets/friends.svg';
 
@@ -187,7 +187,7 @@ export default function Sidebar({ username }) {
                 </div>
                 <div className="user-profile">
                     {isAdmin ? (
-                        <div className="admin-avatar-rainbow-ring">
+                        <div className="admin-avatar-ring">
                             <div className="avatar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.25rem' }}>
                                 {sidebarAvatar}
                             </div>

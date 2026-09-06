@@ -5,7 +5,7 @@ import { AdminService } from '../services/AdminService';
 import { TournamentService } from '../services/TournamentService';
 import { ReplayService } from '../services/ReplayService';
 import { AuthService } from '../services/AuthService';
-import AdminDisplayName, { AdminRainbowCircle } from '../components/AdminDisplayName';
+import AdminDisplayName from '../components/AdminDisplayName';
 import AdminDirectMessageModal from '../components/admin/AdminDirectMessageModal';
 import '../index.css';
 
@@ -20,6 +20,7 @@ export default function AdminDashboard() {
     // Direct Messaging state
     const [isDmModalOpen, setIsDmModalOpen] = useState(false);
     const [dmTargetUser, setDmTargetUser] = useState(null);
+    const [dmDefaultSendToAll, setDmDefaultSendToAll] = useState(false);
     const [allDirectMessages, setAllDirectMessages] = useState([]);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [messageSearch, setMessageSearch] = useState('');
@@ -86,7 +87,8 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleOpenDm = (targetUser) => {
+    const handleOpenDm = (targetUser, isSendToAll = false) => {
+        setDmDefaultSendToAll(isSendToAll);
         if (!targetUser) {
             setDmTargetUser(null);
             setIsDmModalOpen(true);
@@ -250,7 +252,9 @@ export default function AdminDashboard() {
                     <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         🛡️ Hệ thống Quản trị (Admin Panel)
                     </h1>
-                    <AdminRainbowCircle size="lg" />
+                    <span className="admin-badge-pill" style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
+                        🛡️ Admin
+                    </span>
                 </div>
 
                 {/* Main Navigation tabs */}
@@ -626,14 +630,22 @@ export default function AdminDashboard() {
                                             Quản lý và theo dõi toàn bộ tin nhắn do Quản trị viên gửi tới người dùng trong hệ thống
                                         </p>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                                         <button
                                             type="button"
-                                            onClick={() => handleOpenDm(null)}
+                                            onClick={() => handleOpenDm(null, false)}
                                             className="primary-btn"
                                             style={{ padding: '8px 16px', fontSize: '0.85rem', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
                                         >
                                             ➕ Soạn tin nhắn mới
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenDm(null, true)}
+                                            className="primary-btn"
+                                            style={{ padding: '8px 16px', fontSize: '0.85rem', background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
+                                        >
+                                            📢 Gửi tất cả người dùng
                                         </button>
                                         <button
                                             type="button"
@@ -684,7 +696,15 @@ export default function AdminDashboard() {
                                         </div>
                                     ) : filteredMessages.length > 0 ? (
                                         filteredMessages.map((msg, idx) => {
-                                            const recipientName = msg.recipientUsername || msg.receiverUsername || msg.recipient?.username || msg.receiver?.username || (msg.recipientId ? `User #${msg.recipientId}` : 'Người chơi');
+                                            const isBroadcastMsg = Boolean(
+                                                msg.isBroadcast ||
+                                                msg.sendToAll ||
+                                                msg.recipientUsername === 'Tất cả người dùng' ||
+                                                msg.receiverUsername === 'Tất cả người dùng'
+                                            );
+                                            const recipientName = isBroadcastMsg 
+                                                ? 'Tất cả người dùng' 
+                                                : (msg.recipientUsername || msg.receiverUsername || msg.recipient?.username || msg.receiver?.username || (msg.recipientId ? `User #${msg.recipientId}` : 'Người chơi'));
                                             const recipientId = msg.recipientId ?? msg.receiverId ?? msg.recipient?.id ?? msg.receiver?.id;
                                             const msgType = String(msg.type || msg.messageType || msg.category || 'INFO').toUpperCase();
                                             const dateVal = msg.sentAt || msg.createdAt || msg.timestamp;
@@ -694,8 +714,8 @@ export default function AdminDashboard() {
                                                 <div
                                                     key={msg.id || `msg_${idx}`}
                                                     style={{
-                                                        background: 'rgba(0, 0, 0, 0.25)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        background: isBroadcastMsg ? 'rgba(245, 158, 11, 0.05)' : 'rgba(0, 0, 0, 0.25)',
+                                                        border: isBroadcastMsg ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
                                                         borderRadius: '12px',
                                                         padding: '16px',
                                                         display: 'flex',
@@ -705,13 +725,17 @@ export default function AdminDashboard() {
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                                                            <span style={{ fontSize: '1.2rem' }}>👤</span>
+                                                            <span style={{ fontSize: '1.2rem' }}>{isBroadcastMsg ? '📢' : '👤'}</span>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Gửi tới:</span>
-                                                                <AdminDisplayName
-                                                                    username={recipientName}
-                                                                    nameStyle={{ fontWeight: 'bold' }}
-                                                                />
+                                                                {isBroadcastMsg ? (
+                                                                    <span style={{ fontWeight: 'bold', color: '#f59e0b' }}>Tất cả người dùng</span>
+                                                                ) : (
+                                                                    <AdminDisplayName
+                                                                        username={recipientName}
+                                                                        nameStyle={{ fontWeight: 'bold' }}
+                                                                    />
+                                                                )}
                                                             </div>
                                                             <span style={{
                                                                 padding: '2px 8px',
@@ -727,6 +751,19 @@ export default function AdminDashboard() {
                                                             }}>
                                                                 {msgType}
                                                             </span>
+                                                            {isBroadcastMsg && (
+                                                                <span style={{
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: '8px',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 'bold',
+                                                                    background: 'rgba(245, 158, 11, 0.2)',
+                                                                    color: '#f59e0b',
+                                                                    border: '1px solid rgba(245, 158, 11, 0.4)'
+                                                                }}>
+                                                                    📢 Toàn hệ thống
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -734,7 +771,7 @@ export default function AdminDashboard() {
                                                             </span>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => handleOpenDm({ userId: recipientId, username: recipientName })}
+                                                                onClick={() => isBroadcastMsg ? handleOpenDm(null, true) : handleOpenDm({ userId: recipientId, username: recipientName })}
                                                                 className="secondary-btn"
                                                                 style={{ padding: '3px 10px', fontSize: '0.75rem', borderColor: 'rgba(59, 130, 246, 0.4)', color: '#60a5fa' }}
                                                             >
@@ -790,6 +827,7 @@ export default function AdminDashboard() {
                 user={dmTargetUser}
                 adminUsername={username}
                 isOpen={isDmModalOpen}
+                defaultSendToAll={dmDefaultSendToAll}
                 onClose={() => setIsDmModalOpen(false)}
                 onMessageSent={loadAllDirectMessages}
             />

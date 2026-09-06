@@ -70,8 +70,24 @@ export const AdminService = {
      */
     normalizeMessage: (m, index = 0) => {
         if (!m || typeof m !== 'object') return null;
+        const isBroadcast = Boolean(
+            m.isBroadcast ??
+            m.sendToAll ??
+            m.broadcast ??
+            m.allUsers ??
+            m.toAll ??
+            (m.recipientUsername === 'Tất cả người dùng') ??
+            (m.receiverUsername === 'Tất cả người dùng')
+        );
         const recipientId = m.recipientId ?? m.receiverId ?? m.recipient?.id ?? m.recipient?.userId ?? m.receiver?.id ?? m.receiver?.userId ?? m.targetUserId ?? m.toUserId ?? null;
-        const recipientUsername = m.recipientUsername ?? m.receiverUsername ?? m.recipient?.username ?? m.receiver?.username ?? m.targetUsername ?? m.toUsername ?? (recipientId ? `User #${recipientId}` : 'Người chơi');
+        let recipientUsername = m.recipientUsername ?? m.receiverUsername ?? m.recipient?.username ?? m.receiver?.username ?? m.targetUsername ?? m.toUsername;
+        if (isBroadcast) {
+            if (!recipientUsername || recipientUsername === 'Người chơi' || recipientUsername.startsWith('User #') || recipientUsername === 'Tất cả người dùng') {
+                recipientUsername = 'Tất cả người dùng';
+            }
+        } else if (!recipientUsername) {
+            recipientUsername = recipientId ? `User #${recipientId}` : 'Người chơi';
+        }
         const senderUsername = m.senderUsername ?? m.senderName ?? m.sender?.username ?? m.sender?.name ?? 'Admin';
         const senderId = m.senderId ?? m.sender?.id ?? m.sender?.userId ?? null;
         const title = m.title ?? m.subject ?? m.topic ?? 'Thông báo từ Quản trị viên';
@@ -100,7 +116,9 @@ export const AdminService = {
             sentAt,
             createdAt: sentAt,
             read,
-            isRead: read
+            isRead: read,
+            isBroadcast,
+            sendToAll: isBroadcast
         };
     },
 
@@ -207,6 +225,77 @@ export const AdminService = {
     },
 
     /**
+     * Broadcast a message from Admin to ALL users in the system.
+     */
+    broadcastMessage: async ({ title, content, type = 'ANNOUNCEMENT', senderName = 'Admin' }) => {
+        const id = 'adm_msg_broadcast_' + Date.now();
+        const sentAt = new Date().toISOString();
+        const messagePayload = {
+            id,
+            messageId: id,
+            recipientUsername: 'Tất cả người dùng',
+            receiverUsername: 'Tất cả người dùng',
+            title: title || 'Thông báo từ Quản trị viên',
+            subject: title || 'Thông báo từ Quản trị viên',
+            content,
+            message: content,
+            body: content,
+            type: type || 'ANNOUNCEMENT',
+            senderUsername: senderName,
+            senderName,
+            sentAt,
+            createdAt: sentAt,
+            sendToAll: true,
+            isBroadcast: true
+        };
+
+        let responseData = null;
+        try {
+            const res = await api.post('/api/admin/messages/broadcast', messagePayload);
+            responseData = res.data;
+        } catch {
+            try {
+                const res = await api.post('/api/user/messages/broadcast', messagePayload);
+                responseData = res.data;
+            } catch {
+                try {
+                    const res = await api.post('/api/admin/messages', messagePayload);
+                    responseData = res.data;
+                } catch (fallbackErr) {
+                    console.warn('Backend broadcast endpoint unavailable, persisting locally:', fallbackErr?.message);
+                }
+            }
+        }
+
+        // Real-time broadcast via WebSocket if available
+        try {
+            if (socketClient) {
+                socketClient.send({
+                    type: 'ADMIN_DIRECT_MESSAGE',
+                    ...messagePayload
+                });
+            }
+        } catch (wsErr) {
+            console.warn('WebSocket broadcast failed:', wsErr);
+        }
+
+        // Persist to local admin history
+        try {
+            const existingAdminHistory = JSON.parse(localStorage.getItem('admin_direct_messages_history') || '[]');
+            const historyList = Array.isArray(existingAdminHistory) ? existingAdminHistory : [];
+            historyList.unshift(messagePayload);
+            localStorage.setItem('admin_direct_messages_history', JSON.stringify(historyList));
+
+            window.dispatchEvent(new CustomEvent('admin-direct-message-update', { detail: messagePayload }));
+            window.dispatchEvent(new CustomEvent('admin-inbox-updated', { detail: messagePayload }));
+        } catch (storageErr) {
+            console.error('Failed to store broadcast message locally:', storageErr);
+        }
+
+        return responseData || messagePayload;
+    },
+
+    /**
      * Get direct message history between admin and a specific user.
      */
     getUserDirectMessages: async (userId) => {
@@ -243,7 +332,46 @@ export const AdminService = {
                 String(normalized.recipientUsername).toLowerCase() === String(userId).toLowerCase()
             );
 
-            if (matchesUser) {
+            if (matchesUser || normalized.isBroadcast || normalized.sendToAll) {
+                seen.add(normalized.id);
+                result.push(normalized);
+            }
+        }
+
+        result.sort((a, b) => new Date(b.sentAt || 0) - new Date(a.sentAt || 0));
+        return result;
+    },
+
+    /**
+     * Get all broadcast messages sent by admin to all users.
+     */
+    getBroadcastMessages: async () => {
+        let apiBroadcasts = [];
+        try {
+            const res = await api.get('/api/admin/messages/broadcast');
+            const extracted = AdminService.extractArray(res.data);
+            if (extracted) apiBroadcasts = extracted;
+        } catch {
+            // Fallback
+        }
+
+        const all = await AdminService.getAllDirectMessages();
+        const combined = [...apiBroadcasts, ...all];
+        const seen = new Set();
+        const result = [];
+
+        for (let i = 0; i < combined.length; i++) {
+            const normalized = AdminService.normalizeMessage(combined[i], i);
+            if (!normalized || seen.has(normalized.id)) continue;
+
+            const isBroadcast = Boolean(
+                normalized.isBroadcast ||
+                normalized.sendToAll ||
+                normalized.recipientUsername === 'Tất cả người dùng' ||
+                normalized.receiverUsername === 'Tất cả người dùng'
+            );
+
+            if (isBroadcast) {
                 seen.add(normalized.id);
                 result.push(normalized);
             }
@@ -362,7 +490,16 @@ export const AdminService = {
             const allAdminMsgs = JSON.parse(localStorage.getItem('admin_direct_messages_history') || '[]');
             if (Array.isArray(allAdminMsgs)) {
                 for (const m of allAdminMsgs) {
-                    if (String(m.recipientId) === String(userId) || String(m.receiverId) === String(userId)) {
+                    const isBroadcast = Boolean(
+                        m.isBroadcast ||
+                        m.sendToAll ||
+                        m.recipientUsername === 'Tất cả người dùng' ||
+                        m.receiverUsername === 'Tất cả người dùng'
+                    );
+                    if (
+                        (userId && (String(m.recipientId) === String(userId) || String(m.receiverId) === String(userId))) ||
+                        isBroadcast
+                    ) {
                         inbox.push(m);
                     }
                 }

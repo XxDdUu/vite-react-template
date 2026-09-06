@@ -16,11 +16,13 @@ import AdminDashboard from './pages/AdminDashboard';
 import Replay from './pages/Replay';
 import ReplayPage from './pages/ReplayPage';
 import { AuthService } from './services/AuthService';
+import { UserService } from './services/UserService';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useEffect, useState } from "react";
 import './index.css';
 
 import { socketClient } from './services/SocketService';
+import { setAdminRainbowStatus, setAllAdminRainbowStatuses } from './components/AdminDisplayName';
 
 // Simple PrivateRoute wrapper
 const PrivateRoute = ({ children }) => {
@@ -52,13 +54,24 @@ const GlobalSocket = ({ children }) => {
             socketClient.connect(token);
         }
 
+        // Initialize admin rainbow statuses on application startup
+        UserService.getAdminRainbowStatuses()
+            .then(statuses => {
+                if (Array.isArray(statuses)) {
+                    setAllAdminRainbowStatuses(statuses);
+                }
+            })
+            .catch(err => {
+                console.debug('Could not load admin rainbow statuses on startup:', err);
+            });
+
         const handleGlobalSocketMessage = (data) => {
             try {
                 const msg = JSON.parse(data);
                 if (msg.type === 'ADMIN_DIRECT_MESSAGE') {
                     const currentToken = localStorage.getItem('accessToken');
                     const payload = currentToken ? AuthService.parseToken(currentToken) : null;
-                    if (payload && String(payload.userId) === String(msg.recipientId)) {
+                    if (payload && (String(payload.userId) === String(msg.recipientId) || msg.isBroadcast || msg.sendToAll)) {
                         const key = `user_inbox_messages_${payload.userId}`;
                         const inbox = JSON.parse(localStorage.getItem(key) || '[]');
                         if (!inbox.some(m => m.id === msg.id)) {
@@ -66,6 +79,21 @@ const GlobalSocket = ({ children }) => {
                             localStorage.setItem(key, JSON.stringify(inbox));
                         }
                         window.dispatchEvent(new CustomEvent('admin-direct-message-update', { detail: msg }));
+                    }
+                } else if (msg.type === 'ADMIN_PROFILE_UPDATED') {
+                    // Update admin rainbow status reactively across the entire application
+                    const enabled = Boolean(msg.rainbowNameEnabled);
+                    if (msg.adminId != null) {
+                        setAdminRainbowStatus(msg.adminId, enabled);
+                    }
+                    if (msg.userId != null) {
+                        setAdminRainbowStatus(msg.userId, enabled);
+                    }
+                    if (msg.adminUsername) {
+                        setAdminRainbowStatus(msg.adminUsername, enabled);
+                    }
+                    if (msg.username) {
+                        setAdminRainbowStatus(msg.username, enabled);
                     }
                 }
             } catch {

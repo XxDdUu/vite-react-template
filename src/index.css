@@ -2153,142 +2153,53 @@ div[class*=" chessboard-"] {
 }
 
 /* ==========================================================================
-   Admin Rainbow Circle & Glow Animations
+   Admin Normal Icon & Badges
    ========================================================================== */
 
-@keyframes rainbow-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes rainbow-text-shimmer {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-@keyframes pulse-rainbow-glow {
-    0%, 100% {
-        filter: drop-shadow(0 0 5px rgba(255, 60, 120, 0.6)) drop-shadow(0 0 10px rgba(70, 180, 255, 0.4));
-    }
-    50% {
-        filter: drop-shadow(0 0 8px rgba(120, 255, 100, 0.7)) drop-shadow(0 0 14px rgba(255, 200, 50, 0.5));
-    }
-}
-
-/* Standalone Rainbow Circle Badge */
+/* Normal Admin Icon */
+.admin-icon,
 .admin-rainbow-circle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    min-width: 18px;
-    min-height: 18px;
-    border-radius: 50%;
-    position: relative;
     vertical-align: middle;
-    box-sizing: border-box;
-    padding: 2.5px;
-    background: conic-gradient(
-        from 0deg,
-        #ff0055,
-        #ff7700,
-        #ffdd00,
-        #00e676,
-        #00e5ff,
-        #2979ff,
-        #651fff,
-        #d500f9,
-        #ff0055
-    );
-    animation: rainbow-spin 2.5s linear infinite;
-    box-shadow: 0 0 8px rgba(255, 100, 180, 0.5), 0 0 12px rgba(41, 121, 255, 0.3);
+    line-height: 1;
     flex-shrink: 0;
 }
 
-.admin-rainbow-circle-inner {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: #0f1115;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
+.admin-icon-sm,
 .admin-rainbow-circle-sm {
-    width: 14px;
-    height: 14px;
-    min-width: 14px;
-    min-height: 14px;
-    padding: 2px;
+    font-size: 0.85rem;
 }
 
+.admin-icon-lg,
 .admin-rainbow-circle-lg {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    min-height: 24px;
-    padding: 3px;
+    font-size: 1.35rem;
 }
 
-/* Avatar Rainbow Ring */
+/* Admin Avatar Ring */
+.admin-avatar-ring,
 .admin-avatar-rainbow-ring {
     position: relative;
     border-radius: 50%;
-    padding: 3px;
+    padding: 2px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: conic-gradient(
-        from 0deg,
-        #ff0055,
-        #ff7700,
-        #ffdd00,
-        #00e676,
-        #00e5ff,
-        #2979ff,
-        #651fff,
-        #d500f9,
-        #ff0055
-    );
-    animation: rainbow-spin 3s linear infinite;
-    box-shadow: 0 0 12px rgba(255, 0, 128, 0.4), 0 0 16px rgba(0, 229, 255, 0.3);
+    border: 2px solid #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
     flex-shrink: 0;
 }
 
+.admin-avatar-ring > *,
 .admin-avatar-rainbow-ring > * {
     border-radius: 50%;
 }
 
-/* Rainbow Text Gradient */
+/* Admin Name Text */
+.admin-name,
 .admin-rainbow-text {
-    background: linear-gradient(
-        90deg,
-        #ff3366,
-        #ff9933,
-        #ffea00,
-        #00e676,
-        #00e5ff,
-        #2979ff,
-        #a855f7,
-        #ff3366
-    );
-    background-size: 250% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: rainbow-text-shimmer 4s linear infinite;
+    color: var(--accent-blue-hover, #60a5fa);
     font-weight: 700;
 }
 
@@ -2303,10 +2214,10 @@ div[class*=" chessboard-"] {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    background: rgba(255, 0, 128, 0.12);
-    border: 1px solid rgba(255, 0, 128, 0.3);
-    color: #ff6090;
-    box-shadow: 0 0 10px rgba(255, 0, 128, 0.15);
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
 }
 
 /* ==========================================================================
@@ -2488,6 +2399,47 @@ div[class*=" chessboard-"] {
         transform: scale(1.15);
     }
 }
+
+/* ==========================================================================
+   GLOBAL ANIMATED RAINBOW ADMIN NAME EFFECT
+   Spectrum: Red → Orange → Yellow → Green → Blue → Indigo → Violet → Red
+   ========================================================================== */
+@keyframes admin-rainbow-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 200% 50%;
+    }
+}
+
+.admin-rainbow-name {
+    background: linear-gradient(
+        90deg,
+        #ff3b30,
+        #ff9500,
+        #ffd60a,
+        #34c759,
+        #00c7be,
+        #32ade6,
+        #5856d6,
+        #af52de,
+        #ff2d55,
+        #ff3b30
+    );
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent !important;
+    animation: admin-rainbow-flow 3.5s linear infinite;
+    display: inline-block;
+    font-weight: 800;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+    letter-spacing: normal;
+    vertical-align: middle;
+}
+
 
 
 

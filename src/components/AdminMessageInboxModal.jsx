@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminService } from '../services/AdminService';
-import { AdminRainbowCircle } from './AdminDisplayName';
+import AdminDisplayName from './AdminDisplayName';
 
 const MESSAGE_TYPES = {
     INFO: { label: 'ℹ️ Thông tin', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' },
@@ -156,13 +156,12 @@ export default function AdminMessageInboxModal({ userId, isOpen, onClose, onRefr
                                     {/* Top info */}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div className="admin-avatar-rainbow-ring" style={{ width: '22px', height: '22px', padding: '1.5px' }}>
-                                                <span style={{ fontSize: '0.75rem' }}>🛡️</span>
-                                            </div>
-                                            <span className="admin-rainbow-text" style={{ fontSize: '0.82rem', fontWeight: 'bold' }}>
-                                                {msg.senderName || 'Ban Quản trị'}
-                                            </span>
-                                            <AdminRainbowCircle size="sm" />
+                                            <AdminDisplayName
+                                                username={msg.senderName || 'Ban Quản trị'}
+                                                userId={msg.senderId}
+                                                role="ROLE_ADMIN"
+                                                nameStyle={{ fontSize: '0.82rem', fontWeight: 'bold' }}
+                                            />
                                             <span
                                                 style={{
                                                     padding: '2px 7px',
@@ -176,6 +175,22 @@ export default function AdminMessageInboxModal({ userId, isOpen, onClose, onRefr
                                             >
                                                 {typeConfig.label}
                                             </span>
+                                            {Boolean(msg.isBroadcast || msg.sendToAll || msg.recipientUsername === 'Tất cả người dùng') && (
+                                                <span
+                                                    style={{
+                                                        padding: '2px 7px',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 'bold',
+                                                        background: 'rgba(245, 158, 11, 0.2)',
+                                                        color: '#f59e0b',
+                                                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                        marginLeft: '4px'
+                                                    }}
+                                                >
+                                                    📢 Toàn hệ thống
+                                                </span>
+                                            )}
                                         </div>
                                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                                             {new Date(msg.sentAt).toLocaleString('vi-VN')}

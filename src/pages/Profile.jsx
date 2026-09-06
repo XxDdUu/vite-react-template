@@ -4,7 +4,7 @@ import { UserService } from '../services/UserService';
 import { GameService } from '../services/GameService';
 import { FriendService } from '../services/FriendService';
 import Sidebar from '../components/Sidebar';
-import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
+import AdminDisplayName, { checkIsAdmin, setAdminRainbowStatus } from '../components/AdminDisplayName';
 import '../index.css';
 
 const countryFlags = {
@@ -37,6 +37,8 @@ export default function Profile() {
     const [history, setHistory] = useState([]);
     const [friendsCount, setFriendsCount] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [rainbowEnabled, setRainbowEnabled] = useState(false);
+    const [rainbowLoading, setRainbowLoading] = useState(false);
     const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'match-history'); // 'match-history' or 'tournaments'
     
     // Profile info state
@@ -71,6 +73,13 @@ export default function Profile() {
             if (userData?.userId) {
                 const statsData = await UserService.getStats(userData.userId);
                 setStats(statsData);
+                
+                const isRainbow = Boolean(userData?.rainbowNameEnabled ?? statsData?.rainbowNameEnabled);
+                setRainbowEnabled(isRainbow);
+                setAdminRainbowStatus(userData.userId, isRainbow);
+                if (userData.username) {
+                    setAdminRainbowStatus(userData.username, isRainbow);
+                }
                 
                 const historyData = await GameService.getHistory(userData.userId);
                 console.log("History Data received:", historyData);
@@ -115,6 +124,28 @@ export default function Profile() {
             console.error("Failed to load profile", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleToggleRainbowName = async () => {
+        if (rainbowLoading) return;
+        setRainbowLoading(true);
+        const nextStatus = !rainbowEnabled;
+        try {
+            await UserService.updateRainbowName(nextStatus);
+            setRainbowEnabled(nextStatus);
+            setUser(prev => prev ? { ...prev, rainbowNameEnabled: nextStatus } : prev);
+            if (user?.userId) {
+                setAdminRainbowStatus(user.userId, nextStatus);
+            }
+            if (user?.username) {
+                setAdminRainbowStatus(user.username, nextStatus);
+            }
+        } catch (err) {
+            console.error("Failed to toggle rainbow admin name", err);
+            alert("Không thể cập nhật tên cầu vồng: " + (err.response?.data?.message || err.message));
+        } finally {
+            setRainbowLoading(false);
         }
     };
 
@@ -208,7 +239,7 @@ export default function Profile() {
                         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
                             {/* Profile Picture */}
                             <div style={{ position: 'relative' }}>
-                                <div className={checkIsAdmin(user?.role, user?.username) ? 'admin-avatar-rainbow-ring' : ''} style={{ borderRadius: '10px' }}>
+                                <div className={checkIsAdmin(user?.role, user?.username) ? 'admin-avatar-ring' : ''} style={{ borderRadius: '10px' }}>
                                     <div style={{ width: '90px', height: '90px', borderRadius: '8px', background: '#312e2b', border: '1px solid #403d39', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: '#babfc3', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
                                         {profileAvatar}
                                     </div>
@@ -221,6 +252,7 @@ export default function Profile() {
                                     <AdminDisplayName
                                         username={user?.username}
                                         role={user?.role}
+                                        rainbowNameEnabled={rainbowEnabled}
                                         showBadge={user?.role === 'ROLE_ADMIN'}
                                         size="lg"
                                         nameStyle={{ fontSize: '1.8rem', fontWeight: '800', fontFamily: '"Outfit", sans-serif' }}
@@ -238,6 +270,45 @@ export default function Profile() {
                                     <span style={{ color: '#f87171' }}>Thua: {stats?.losses || 0}</span>
                                     <span style={{ color: '#9ca3af' }}>Hòa: {stats?.draws || 0}</span>
                                 </div>
+                                {checkIsAdmin(user?.role, user?.username) && (
+                                    <div style={{
+                                        marginTop: '4px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        background: 'rgba(255, 255, 255, 0.04)',
+                                        padding: '5px 12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        width: 'fit-content'
+                                    }}>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#e5e7eb' }}>
+                                            Rainbow Admin Name
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleToggleRainbowName}
+                                            disabled={rainbowLoading}
+                                            style={{
+                                                background: rainbowEnabled
+                                                    ? 'linear-gradient(135deg, #10b981, #059669)'
+                                                    : '#374151',
+                                                color: '#ffffff',
+                                                border: 'none',
+                                                padding: '4px 12px',
+                                                borderRadius: '6px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '800',
+                                                cursor: rainbowLoading ? 'not-allowed' : 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: rainbowEnabled ? '0 0 10px rgba(16, 185, 129, 0.4)' : 'none'
+                                            }}
+                                            title={rainbowEnabled ? 'Tắt tên cầu vồng' : 'Bật tên cầu vồng'}
+                                        >
+                                            {rainbowLoading ? '...' : rainbowEnabled ? '[ ON ]' : '[ OFF ]'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

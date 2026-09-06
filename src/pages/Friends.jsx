@@ -259,7 +259,7 @@ export default function Friends() {
                                     .map(friend => (
                                         <div key={friend.userId} className="friend-item">
                                             <div className="friend-info" onClick={() => handlePlayerClick(friend.userId)} style={{ cursor: 'pointer' }}>
-                                                <div className={`friend-avatar ${checkIsAdmin(friend.role, friend.username) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ borderRadius: '50%' }}>
+                                                <div className={`friend-avatar ${checkIsAdmin(friend.role, friend.username) ? 'admin-avatar-ring' : ''}`} style={{ borderRadius: '50%' }}>
                                                     {friend.username.charAt(0).toUpperCase()}
                                                     <div style={{
                                                         position: 'absolute', bottom: '2px', right: '2px',
@@ -436,7 +436,7 @@ export default function Friends() {
                         {/* Header info */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div className={checkIsAdmin(selectedPlayerStats.role, selectedPlayerStats.username) ? 'admin-avatar-rainbow-ring' : ''} style={{ borderRadius: '50%' }}>
+                                <div className={checkIsAdmin(selectedPlayerStats.role, selectedPlayerStats.username) ? 'admin-avatar-ring' : ''} style={{ borderRadius: '50%' }}>
                                     <div style={{
                                         width: '64px', height: '64px', borderRadius: '50%',
                                         background: 'linear-gradient(135deg, #6366f1, #a855f7)',

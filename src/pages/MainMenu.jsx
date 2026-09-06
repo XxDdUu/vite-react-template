@@ -377,7 +377,7 @@ export default function MainMenu() {
                 <div className="board-container">
                     <div id="main-menu-board" className="chess-board-wrapper"></div>
                     <div className="player-info-bottom">
-                        <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ borderRadius: '4px' }}>
+                        <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-ring' : ''}`} style={{ borderRadius: '4px' }}>
                             <span className="icon">👤</span>
                         </div>
                         <span className="username" style={{ textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: '6px' }}>

@@ -679,7 +679,7 @@ export default function OnlinePlay() {
                             {/* Opponent Info Bar */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div className={`avatar-small ${checkIsAdmin(opponent?.role, opponent?.name) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
+                                    <div className={`avatar-small ${checkIsAdmin(opponent?.role, opponent?.name) ? 'admin-avatar-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
                                         <span className="icon">👤</span>
                                     </div>
                                     <AdminDisplayName
@@ -708,7 +708,7 @@ export default function OnlinePlay() {
                             {/* Your Info Bar */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-rainbow-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
+                                    <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
                                         <span className="icon">👤</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

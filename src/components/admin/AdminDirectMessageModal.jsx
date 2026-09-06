@@ -36,11 +36,12 @@ const TEMPLATES = [
     }
 ];
 
-export default function AdminDirectMessageModal({ user, adminUsername = 'Quản trị viên', isOpen, onClose, onMessageSent }) {
+export default function AdminDirectMessageModal({ user, adminUsername = 'Quản trị viên', isOpen, onClose, onMessageSent, defaultSendToAll = false }) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [type, setType] = useState('INFO');
     const [history, setHistory] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('compose'); // 'compose' | 'history'
     const [sending, setSending] = useState(false);
     const [successNotice, setSuccessNotice] = useState('');
@@ -49,34 +50,73 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
     const [searchResults, setSearchResults] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [sendToAll, setSendToAll] = useState(false);
 
     const targetUserId = user?.userId ?? user?.id ?? selectedUser?.userId ?? selectedUser?.id ?? (manualRecipient ? (isNaN(manualRecipient) ? null : Number(manualRecipient)) : null);
     const targetUsername = user?.username ?? user?.name ?? selectedUser?.username ?? (manualRecipient || (targetUserId ? `User #${targetUserId}` : ''));
+
+    const loadHistory = async (isAll = sendToAll, userId = targetUserId) => {
+        setHistoryLoading(true);
+        try {
+            if (isAll) {
+                const list = await AdminService.getBroadcastMessages();
+                setHistory(list || []);
+            } else if (userId) {
+                const list = await AdminService.getUserDirectMessages(userId);
+                setHistory(list || []);
+            } else {
+                const list = await AdminService.getAllDirectMessages();
+                setHistory(list || []);
+            }
+        } catch (err) {
+            console.error('Failed to load message history:', err);
+            setHistory([]);
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
             setTitle('');
             setContent('');
-            setType('INFO');
+            const isAll = Boolean(defaultSendToAll && !user);
+            setSendToAll(isAll);
+            setType(isAll ? 'ANNOUNCEMENT' : 'INFO');
             setSuccessNotice('');
             setActiveTab('compose');
             setSelectedUser(null);
             setSearchQuery('');
             setSearchResults([]);
-            if (targetUserId) {
-                loadUserHistory(targetUserId);
-            } else {
-                setHistory([]);
-            }
+            loadHistory(isAll, isAll ? null : (user?.userId ?? user?.id));
         }
-    }, [isOpen, user?.userId, user?.id]);
+    }, [isOpen, user?.userId, user?.id, defaultSendToAll]);
 
     useEffect(() => {
         // When an admin selects a user from search, load their history
         if (selectedUser?.userId || selectedUser?.id) {
-            loadUserHistory(selectedUser.userId ?? selectedUser.id);
+            loadHistory(false, selectedUser.userId ?? selectedUser.id);
         }
     }, [selectedUser]);
+
+    const handleSwitchToSendToAll = () => {
+        setSendToAll(true);
+        setSelectedUser(null);
+        setType('ANNOUNCEMENT');
+        loadHistory(true, null);
+    };
+
+    const handleSwitchToPersonal = () => {
+        setSendToAll(false);
+        loadHistory(false, targetUserId);
+    };
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        if (tab === 'history') {
+            loadHistory(sendToAll, targetUserId);
+        }
+    };
 
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
@@ -100,16 +140,6 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
         setSearchQuery('');
     };
 
-    const loadUserHistory = async (userIdToLoad = targetUserId) => {
-        if (!userIdToLoad) return;
-        try {
-            const list = await AdminService.getUserDirectMessages(userIdToLoad);
-            setHistory(list || []);
-        } catch (err) {
-            console.error('Failed to load message history:', err);
-        }
-    };
-
     const handleApplyTemplate = (tmpl) => {
         setTitle(tmpl.title);
         setContent(tmpl.content);
@@ -118,8 +148,8 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        const resolvedName = targetUsername || manualRecipient.trim();
-        if (!resolvedName) {
+        const resolvedName = sendToAll ? 'Tất cả người dùng' : (targetUsername || manualRecipient.trim());
+        if (!sendToAll && !resolvedName) {
             alert('Vui lòng chỉ định người nhận tin nhắn!');
             return;
         }
@@ -130,24 +160,36 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
 
         try {
             setSending(true);
-            const resolvedId = targetUserId || `custom_${Date.now()}`;
-            await AdminService.sendDirectMessage(resolvedId, {
-                title: title.trim() || 'Thông báo từ Quản trị viên',
-                content: content.trim(),
-                type,
-                targetUsername: resolvedName,
-                senderName: adminUsername
-            });
+            if (sendToAll) {
+                await AdminService.broadcastMessage({
+                    title: title.trim() || 'Thông báo từ Quản trị viên',
+                    content: content.trim(),
+                    type: type || 'ANNOUNCEMENT',
+                    senderName: adminUsername
+                });
+                setSuccessNotice('✓ Đã gửi thông báo tới TẤT CẢ người dùng thành công!');
+            } else {
+                const resolvedId = targetUserId || `custom_${Date.now()}`;
+                await AdminService.sendDirectMessage(resolvedId, {
+                    title: title.trim() || 'Thông báo từ Quản trị viên',
+                    content: content.trim(),
+                    type,
+                    targetUsername: resolvedName,
+                    senderName: adminUsername
+                });
+                setSuccessNotice(`✓ Đã gửi tin nhắn trực tiếp tới ${resolvedName} thành công!`);
+            }
 
-            setSuccessNotice(`✓ Đã gửi tin nhắn trực tiếp tới ${resolvedName} thành công!`);
             setTitle('');
             setContent('');
             if (onMessageSent) onMessageSent();
-            await loadUserHistory(resolvedId);
+
+            // Refresh history and switch to history view to display the newly sent message
+            await loadHistory(sendToAll, targetUserId);
             setTimeout(() => {
                 setActiveTab('history');
                 setSuccessNotice('');
-            }, 1200);
+            }, 1000);
         } catch (err) {
             alert('Gửi tin nhắn thất bại: ' + err.message);
         } finally {
@@ -216,7 +258,40 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
                             </div>
                         ) : (
                             <div style={{ marginTop: '8px' }}>
-                                {selectedUser ? (
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                                    <button
+                                        type="button"
+                                        className={!sendToAll ? 'primary-btn' : 'secondary-btn'}
+                                        onClick={handleSwitchToPersonal}
+                                        style={{ padding: '5px 12px', fontSize: '0.82rem', borderRadius: '6px' }}
+                                    >
+                                        👤 Gửi cá nhân
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={sendToAll ? 'primary-btn' : 'secondary-btn'}
+                                        onClick={handleSwitchToSendToAll}
+                                        style={{
+                                            padding: '5px 12px',
+                                            fontSize: '0.82rem',
+                                            borderRadius: '6px',
+                                            background: sendToAll ? 'linear-gradient(135deg, #f59e0b, #ef4444)' : undefined,
+                                            borderColor: sendToAll ? '#f59e0b' : undefined
+                                        }}
+                                    >
+                                        📢 Gửi tất cả người dùng
+                                    </button>
+                                </div>
+
+                                {sendToAll ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '10px', fontSize: '0.88rem' }}>
+                                        <span style={{ fontSize: '1.4rem' }}>📢</span>
+                                        <div>
+                                            <div style={{ fontWeight: 700, color: '#f59e0b' }}>Toàn bộ người chơi trong hệ thống</div>
+                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Mọi tài khoản sẽ nhận được thông báo này trong hộp thư và nhận tin tức thì nếu đang online</div>
+                                        </div>
+                                    </div>
+                                ) : selectedUser ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.88rem' }}>
                                         <AdminDisplayName
                                             username={selectedUser.username || selectedUser.name || `User #${selectedUser.userId || selectedUser.id}`}
@@ -297,7 +372,7 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
                     <button
                         type="button"
                         className={activeTab === 'history' ? 'primary-btn' : 'secondary-btn'}
-                        onClick={() => setActiveTab('history')}
+                        onClick={() => handleTabChange('history')}
                         style={{ padding: '7px 14px', fontSize: '0.82rem', flex: 'none' }}
                     >
                         📜 Lịch sử đã gửi ({history.length})
@@ -436,19 +511,33 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
                 {/* Tab: History */}
                 {activeTab === 'history' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '360px', overflowY: 'auto', paddingRight: '4px' }}>
-                        {history.length === 0 ? (
+                        {historyLoading ? (
                             <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px', fontSize: '0.88rem' }}>
-                                Chưa có tin nhắn nào được gửi tới {targetUsername || user?.username || selectedUser?.username || manualRecipient || 'Người dùng'}
+                                Đang tải lịch sử tin nhắn...
+                            </div>
+                        ) : history.length === 0 ? (
+                            <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px', fontSize: '0.88rem' }}>
+                                {sendToAll
+                                    ? 'Chưa có thông báo nào được gửi tới toàn bộ người dùng'
+                                    : `Chưa có tin nhắn nào được gửi tới ${targetUsername || user?.username || selectedUser?.username || manualRecipient || 'Người dùng'}`}
                             </div>
                         ) : (
                             history.map((msg) => {
+                                const isBroadcast = Boolean(
+                                    msg.isBroadcast ||
+                                    msg.sendToAll ||
+                                    msg.recipientUsername === 'Tất cả người dùng' ||
+                                    msg.receiverUsername === 'Tất cả người dùng'
+                                );
                                 const typeConfig = MESSAGE_TYPES.find(t => t.key === msg.type) || MESSAGE_TYPES[0];
+                                const dateDisplay = msg.sentAt ? new Date(msg.sentAt).toLocaleString('vi-VN') : 'Vừa xong';
+
                                 return (
                                     <div
                                         key={msg.id}
                                         style={{
-                                            background: 'rgba(0, 0, 0, 0.25)',
-                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                            background: isBroadcast ? 'rgba(245, 158, 11, 0.06)' : 'rgba(0, 0, 0, 0.25)',
+                                            border: isBroadcast ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
                                             borderRadius: '10px',
                                             padding: '14px',
                                             display: 'flex',
@@ -456,8 +545,8 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
                                             gap: '6px'
                                         }}
                                     >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                                 <span
                                                     style={{
                                                         padding: '2px 8px',
@@ -471,17 +560,37 @@ export default function AdminDirectMessageModal({ user, adminUsername = 'Quản 
                                                 >
                                                     {typeConfig.label}
                                                 </span>
+                                                {isBroadcast && (
+                                                    <span
+                                                        style={{
+                                                            padding: '2px 8px',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.72rem',
+                                                            fontWeight: 'bold',
+                                                            background: 'rgba(245, 158, 11, 0.2)',
+                                                            color: '#f59e0b',
+                                                            border: '1px solid rgba(245, 158, 11, 0.4)'
+                                                        }}
+                                                    >
+                                                        📢 Toàn hệ thống
+                                                    </span>
+                                                )}
                                                 <strong style={{ fontSize: '0.92rem', color: '#ffffff' }}>{msg.title}</strong>
                                             </div>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                {new Date(msg.sentAt).toLocaleString('vi-VN')}
+                                                {dateDisplay}
                                             </span>
                                         </div>
                                         <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
                                             {msg.content}
                                         </p>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                            <span>Người gửi: <strong style={{ color: 'var(--accent-blue-hover)' }}>{msg.senderName || 'Admin'}</strong></span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap', gap: '4px' }}>
+                                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                    Người gửi: <AdminDisplayName username={msg.senderName || msg.senderUsername || 'Admin'} userId={msg.senderId} role="ROLE_ADMIN" nameStyle={{ fontSize: '0.75rem', fontWeight: 'bold' }} />
+                                                </span>
+                                                <span>Người nhận: <strong style={{ color: isBroadcast ? '#f59e0b' : 'var(--accent-purple)' }}>{isBroadcast ? 'Tất cả người dùng' : (msg.recipientUsername || targetUsername || 'Người chơi')}</strong></span>
+                                            </div>
                                             <span style={{ color: '#10b981' }}>✓ Đã gửi</span>
                                         </div>
                                     </div>
