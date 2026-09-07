@@ -2,11 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
-import { AdminService } from '../services/AdminService';
 import { socketClient } from '../services/SocketService';
 import ThemeCustomizer from './ThemeCustomizer';
-import AdminDisplayName from './AdminDisplayName';
-import AdminMessageInboxModal from './AdminMessageInboxModal';
 import friendsIcon from '../assets/friends.svg';
 
 export default function Sidebar({ username }) {
@@ -15,8 +12,8 @@ export default function Sidebar({ username }) {
     const [userRating, setUserRating] = useState(localStorage.getItem('rating') ? Number(localStorage.getItem('rating')) : null);
     const [displayUsername, setDisplayUsername] = useState(username || localStorage.getItem('username') || 'Khách');
     const [sidebarAvatar, setSidebarAvatar] = useState('👤');
-    const [isInboxOpen, setIsInboxOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
@@ -33,27 +30,23 @@ export default function Sidebar({ username }) {
     const payload = token ? AuthService.parseToken(token) : null;
     const isAdmin = payload?.role === 'ROLE_ADMIN';
 
-    const fetchUnreadCount = async () => {
-        if (payload?.userId) {
-            try {
-                const msgs = await AdminService.getUserInbox(payload.userId);
-                setUnreadCount(msgs.filter(m => !m.read).length);
-            } catch (err) {
-                console.error('Failed to check admin inbox messages:', err);
-            }
-        }
+    const toggleCollapse = () => {
+        setIsCollapsed(prev => {
+            const next = !prev;
+            localStorage.setItem('sidebar_collapsed', String(next));
+            return next;
+        });
+    };
+
+    const handleNavClick = (path) => (e) => {
+        e.preventDefault();
+        setIsMobileOpen(false);
+        navigate(path);
     };
 
     useEffect(() => {
-        fetchUnreadCount();
-        const handleMsgUpdate = () => fetchUnreadCount();
-        window.addEventListener('admin-direct-message-update', handleMsgUpdate);
-        window.addEventListener('admin-inbox-updated', handleMsgUpdate);
-        return () => {
-            window.removeEventListener('admin-direct-message-update', handleMsgUpdate);
-            window.removeEventListener('admin-inbox-updated', handleMsgUpdate);
-        };
-    }, [payload?.userId]);
+        setIsMobileOpen(false);
+    }, [location.pathname]);
 
     useEffect(() => {
         if (username) {
@@ -106,123 +99,131 @@ export default function Sidebar({ username }) {
     }, [payload?.userId]);
 
     return (
-        <div className="sidebar">
-            <div className="sidebar-logo">
-                <h2>Alpha<span>One</span></h2>
+        <>
+            {/* Mobile Top Header Bar (< 768px) */}
+            <div className="mobile-topbar">
+                <button 
+                    className="mobile-menu-btn" 
+                    onClick={() => setIsMobileOpen(true)} 
+                    aria-label="Open navigation menu"
+                >
+                    ☰
+                </button>
+                <div className="mobile-logo" onClick={() => navigate('/menu')} style={{ cursor: 'pointer' }}>
+                    <h2>Alpha<span>One</span></h2>
+                </div>
+                <div className="mobile-avatar" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
+                    {sidebarAvatar}
+                </div>
             </div>
-            <nav className="sidebar-nav">
-                <a 
-                    href="#" 
-                    className={`nav-item ${isActive('/menu') ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); navigate('/menu'); }}
-                >
-                    <span className="icon" style={{ color: isActive('/menu') ? '#3b82f6' : '#d1d5db' }}>♟️</span> Chơi
-                </a>
-                <a 
-                    href="#" 
-                    className={`nav-item ${isActive('/tournaments') ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); navigate('/tournaments'); }}
-                >
-                    <span className="icon">🏆</span> Giải đấu
-                </a>
-                <a 
-                    href="#" 
-                    className={`nav-item ${isActive('/leaderboard') ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}
-                >
-                    <span className="icon">📊</span> Bảng xếp hạng
-                </a>
-                <a 
-                    href="#" 
-                    className={`nav-item ${isActive('/friends') ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); navigate('/friends'); }}
-                >
-                    <span className="icon">
-                        <img src={friendsIcon} alt="Friends" style={{ width: '24px', height: '24px' }} />
-                    </span> Bạn bè
-                </a>
-                <a 
-                    href="#" 
-                    className="nav-item"
-                    onClick={(e) => { e.preventDefault(); setIsInboxOpen(true); }}
-                    title="Hộp thư thông báo"
-                >
-                    <span className="icon" style={{ position: 'relative' }}>
-                        🔔
-                        {unreadCount > 0 && (
-                            <span className="notification-badge-bubble">
-                                {unreadCount > 9 ? '9+' : unreadCount}
-                            </span>
-                        )}
-                    </span>
-                    <span>Tin nhắn</span>
-                    {unreadCount > 0 && (
-                        <span style={{
-                            marginLeft: 'auto',
-                            background: '#ef4444',
-                            color: '#ffffff',
-                            fontSize: '0.68rem',
-                            padding: '1px 6px',
-                            borderRadius: '10px',
-                            fontWeight: 'bold'
-                        }}>
-                            {unreadCount}
-                        </span>
-                    )}
-                </a>
-                {isAdmin && (
+
+            {/* Backdrop for Mobile Drawer */}
+            {isMobileOpen && (
+                <div 
+                    className="sidebar-mobile-backdrop" 
+                    onClick={() => setIsMobileOpen(false)} 
+                />
+            )}
+
+            {/* Sidebar Container */}
+            <div className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
+                <div className="sidebar-header">
+                    <div className="sidebar-logo">
+                        <h2>Alpha<span>One</span></h2>
+                    </div>
+                    <button 
+                        className="collapse-toggle-btn" 
+                        onClick={toggleCollapse} 
+                        title={isCollapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+                        aria-label="Toggle desktop sidebar"
+                    >
+                        {isCollapsed ? '»' : '«'}
+                    </button>
+                    <button 
+                        className="mobile-close-btn" 
+                        onClick={() => setIsMobileOpen(false)} 
+                        title="Đóng thanh bên"
+                        aria-label="Close mobile sidebar"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <nav className="sidebar-nav">
                     <a 
                         href="#" 
-                        className={`nav-item ${isActive('/admin') ? 'active' : ''}`}
-                        onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
+                        className={`nav-item ${isActive('/menu') ? 'active' : ''}`}
+                        onClick={handleNavClick('/menu')}
+                        title="Chơi"
                     >
-                        <span className="icon">🛡️</span> Admin
+                        <span className="icon" style={{ color: isActive('/menu') ? '#3b82f6' : '#d1d5db' }}>♟️</span>
+                        <span className="nav-text">Chơi</span>
                     </a>
-                )}
-            </nav>
-            <div className="sidebar-bottom">
-                <div className="search-bar">
-                    <span className="icon">🔍</span>
-                    <input type="text" placeholder="Tìm kiếm" />
-                </div>
-                <div className="user-profile">
-                    {isAdmin ? (
-                        <div className="admin-avatar-ring">
-                            <div className="avatar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.25rem' }}>
-                                {sidebarAvatar}
-                            </div>
-                        </div>
-                    ) : (
+                    <a 
+                        href="#" 
+                        className={`nav-item ${isActive('/tournaments') ? 'active' : ''}`}
+                        onClick={handleNavClick('/tournaments')}
+                        title="Giải đấu"
+                    >
+                        <span className="icon">🏆</span>
+                        <span className="nav-text">Giải đấu</span>
+                    </a>
+                    <a 
+                        href="#" 
+                        className={`nav-item ${isActive('/leaderboard') ? 'active' : ''}`}
+                        onClick={handleNavClick('/leaderboard')}
+                        title="Bảng xếp hạng"
+                    >
+                        <span className="icon">📊</span>
+                        <span className="nav-text">Bảng xếp hạng</span>
+                    </a>
+                    <a 
+                        href="#" 
+                        className={`nav-item ${isActive('/friends') ? 'active' : ''}`}
+                        onClick={handleNavClick('/friends')}
+                        title="Bạn bè"
+                    >
+                        <span className="icon">
+                            <img src={friendsIcon} alt="Friends" style={{ width: '24px', height: '24px' }} />
+                        </span>
+                        <span className="nav-text">Bạn bè</span>
+                    </a>
+                    {isAdmin && (
+                        <a 
+                            href="#" 
+                            className={`nav-item ${isActive('/admin') ? 'active' : ''}`}
+                            onClick={handleNavClick('/admin')}
+                            title="Admin"
+                        >
+                            <span className="icon">🛡️</span>
+                            <span className="nav-text">Admin</span>
+                        </a>
+                    )}
+                </nav>
+
+                <div className="sidebar-bottom">
+                    <div className="search-bar">
+                        <span className="icon">🔍</span>
+                        <input type="text" placeholder="Tìm kiếm" className="search-input" />
+                    </div>
+                    <div className="user-profile" onClick={handleNavClick('/profile')} style={{ cursor: 'pointer' }}>
                         <div className="avatar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.25rem' }}>
                             {sidebarAvatar}
                         </div>
-                    )}
-                    <div className="user-details" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, marginLeft: '10px' }}>
-                        <AdminDisplayName
-                            username={displayUsername}
-                            role={payload?.role}
-                            isAdmin={isAdmin}
-                            showBadge={false}
-                            size="sm"
-                            nameStyle={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '600', fontSize: '0.85rem' }}
-                        />
-                        {userRating !== null && (
-                            <span className="user-rating" style={{ fontSize: '0.75rem', color: '#81b64c', fontWeight: 'bold', marginTop: '2px' }}>⭐ {userRating} ELO</span>
-                        )}
+                        <div className="user-details" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, marginLeft: '10px' }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{displayUsername}</span>
+                            {userRating !== null && (
+                                <span className="user-rating" style={{ fontSize: '0.75rem', color: '#81b64c', fontWeight: 'bold', marginTop: '2px' }}>⭐ {userRating} ELO</span>
+                            )}
+                        </div>
                     </div>
+                    <ThemeCustomizer />
+                    <button className="logout-btn" onClick={handleLogout} title="Đăng xuất">
+                        <span className="icon">🚪</span>
+                        <span className="logout-text">Đăng xuất</span>
+                    </button>
                 </div>
-                <ThemeCustomizer />
-                <button className="logout-btn" onClick={handleLogout}>
-                    <span className="icon">🚪</span> Đăng xuất
-                </button>
             </div>
-
-            <AdminMessageInboxModal
-                userId={payload?.userId}
-                isOpen={isInboxOpen}
-                onClose={() => setIsInboxOpen(false)}
-                onRefreshCount={fetchUnreadCount}
-            />
-        </div>
+        </>
     );
 }
