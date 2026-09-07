@@ -301,6 +301,7 @@ button {
 /* Sidebar */
 .sidebar {
     width: 240px;
+    min-width: 0;
     flex-shrink: 0;
     background: var(--sidebar-bg);
     border-right: 1px solid var(--glass-border);
@@ -311,6 +312,7 @@ button {
     position: sticky;
     top: 0;
     z-index: 100;
+    overflow: hidden;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -385,6 +387,11 @@ button {
 
 .sidebar.collapsed .nav-item .icon {
     margin-right: 0;
+}
+
+.sidebar.collapsed .sidebar-bottom {
+    padding-left: 16px;
+    padding-right: 16px;
 }
 
 .sidebar.collapsed .search-bar {
@@ -481,12 +488,18 @@ button {
 
 .sidebar-bottom {
     padding: 20px;
+    min-width: 0;
+    flex: 0 1 auto;
+    max-height: 48vh;
     border-top: 1px solid var(--glass-border);
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .search-bar {
     display: flex;
     align-items: center;
+    min-width: 0;
     background: rgba(0, 0, 0, 0.3);
     padding: 8px 12px;
     border-radius: 6px;
@@ -498,6 +511,7 @@ button {
     border: none;
     color: var(--text-primary);
     width: 100%;
+    min-width: 0;
     outline: none;
     margin-left: 8px;
 }
@@ -506,11 +520,15 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
 }
 
 .user-profile .avatar {
     width: 32px;
     height: 32px;
+    flex: 0 0 32px;
     background: var(--eval-white);
     border-radius: 4px;
     display: flex;
@@ -521,13 +539,41 @@ button {
 
 .user-profile .username {
     flex: 1;
+    min-width: 0;
     margin-left: 10px;
     font-weight: 600;
     font-size: 0.9rem;
 }
 
+.user-details {
+    min-width: 0;
+}
+
+.sidebar-admin-name,
+.sidebar-admin-name .admin-name,
+.sidebar-admin-name .admin-rainbow-name {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.sidebar-admin-name {
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.sidebar-admin-name .admin-name,
+.sidebar-admin-name .admin-rainbow-name {
+    flex: 1 1 0;
+    width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .logout-btn {
     width: 100%;
+    min-width: 0;
+    flex: 0 0 auto;
     padding: 10px 12px;
     background: rgba(239, 68, 68, 0.1); /* Light red transparent */
     border: 1px solid rgba(239, 68, 68, 0.2);
@@ -557,9 +603,56 @@ button {
     justify-content: center;
 }
 
+/* Admin identity */
+.admin-avatar-rainbow-ring,
+.admin-avatar-ring {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding: 2px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff3b30, #ff9500, #ffd60a, #34c759, #00c7be, #32ade6, #5856d6, #af52de, #ff2d55, #ff3b30);
+    background-size: 250% 250%;
+    animation: admin-rainbow-flow 3.5s linear infinite;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.35);
+}
+
+.admin-avatar-rainbow-ring > .avatar,
+.admin-avatar-ring > * {
+    border-radius: 50%;
+}
+
+.admin-rainbow-name {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #60a5fa;
+    font-weight: 800;
+    background: linear-gradient(90deg, #ff3b30, #ff9500, #ffd60a, #34c759, #00c7be, #32ade6, #5856d6, #af52de, #ff2d55, #ff3b30) 0 0 / 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: admin-rainbow-flow 3.5s linear infinite;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+}
+
+@keyframes admin-rainbow-flow {
+    from { background-position: 0% 50%; }
+    to { background-position: 200% 50%; }
+}
+
 /* ==========================================
    THEME CUSTOMIZER
    ========================================== */
+.sidebar-theme-customizer,
+.theme-customizer-wrapper {
+    width: 100%;
+    min-width: 0;
+}
+
 .theme-customizer-wrapper {
     margin-top: 10px;
 }
@@ -1074,6 +1167,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-width: 0;
     padding: 15px;
     background: transparent;
     border-bottom: 1px solid #262626;
@@ -1086,6 +1180,8 @@ button {
 .friend-info {
     display: flex;
     align-items: center;
+    min-width: 0;
+    flex: 1 1 auto;
     gap: 15px;
 }
 
@@ -1104,12 +1200,33 @@ button {
 .friend-details {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .friend-name-row {
     display: flex;
     align-items: center;
+    min-width: 0;
     gap: 8px;
+}
+
+.friend-admin-name {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.friend-admin-name .admin-name,
+.friend-admin-name .admin-rainbow-name {
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .friend-status-text {
@@ -2341,6 +2458,11 @@ div[class*=" chessboard-"] {
         transform: translateX(-100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         box-shadow: 4px 0 25px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+
+    .sidebar-bottom {
+        max-height: 50vh;
     }
 
     .sidebar.mobile-open {

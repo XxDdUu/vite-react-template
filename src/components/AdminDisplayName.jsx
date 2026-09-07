@@ -5,24 +5,31 @@ import React, { useState, useEffect } from 'react';
  */
 export const checkIsAdmin = (userOrRole, username = '') => {
     if (!userOrRole && !username) return false;
-    
-    // Check if directly passed boolean
+
+    // Check if directly passed boolean.
     if (typeof userOrRole === 'boolean') return userOrRole;
 
-    // Check if role string
+    // Roles can arrive as a single value or as a JWT authorities/roles array.
+    if (Array.isArray(userOrRole)) {
+        return userOrRole.some((role) => checkIsAdmin(role));
+    }
+
+    // Check a role string (ROLE_ADMIN, ADMIN, or admin).
     if (typeof userOrRole === 'string') {
-        const lower = userOrRole.toLowerCase();
-        if (lower === 'role_admin' || lower === 'admin') return true;
+        const normalizedRole = userOrRole.trim().toLowerCase();
+        if (normalizedRole === 'role_admin' || normalizedRole === 'admin') return true;
     }
 
-    // Check if user object
+    // Check a user/claims object.
     if (typeof userOrRole === 'object' && userOrRole !== null) {
-        if (userOrRole.role === 'ROLE_ADMIN' || userOrRole.role === 'admin') return true;
         if (userOrRole.isAdmin === true) return true;
-        if (userOrRole.username && userOrRole.username.toLowerCase() === 'admin') return true;
+        if (checkIsAdmin(userOrRole.role)) return true;
+        if (checkIsAdmin(userOrRole.roles)) return true;
+        if (checkIsAdmin(userOrRole.authorities)) return true;
+        if (userOrRole.username && checkIsAdmin('', userOrRole.username)) return true;
     }
 
-    if (username && typeof username === 'string' && username.toLowerCase() === 'admin') {
+    if (typeof username === 'string' && username.trim().toLowerCase() === 'admin') {
         return true;
     }
 
@@ -51,10 +58,20 @@ export const setAdminRainbowStatus = (adminIdOrUsername, enabled) => {
  * Bulk set admin rainbow statuses (e.g. on application initialization)
  */
 export const setAllAdminRainbowStatuses = (statusList) => {
-    if (!Array.isArray(statusList)) return;
-    statusList.forEach(item => {
+    const statuses = Array.isArray(statusList)
+        ? statusList
+        : statusList?.admins || statusList?.data || statusList?.content || [];
+
+    if (!Array.isArray(statuses)) return;
+
+    statuses.forEach(item => {
         if (!item) return;
-        const enabled = Boolean(item.rainbowNameEnabled);
+        const enabled = Boolean(
+            item.rainbowNameEnabled
+            ?? item.rainbowEnabled
+            ?? item.isRainbowNameEnabled
+            ?? item.enabled
+        );
         if (item.adminId != null) {
             adminRainbowRegistry.set(String(item.adminId).trim().toLowerCase(), enabled);
         }
@@ -146,11 +163,13 @@ export default function AdminDisplayName({
     nameStyle = {}
 }) {
     const displayName = username || name || user?.username || user?.name || 'Người chơi';
-    const resolvedUserId = userId || user?.userId || user?.id;
-    const resolvedRole = role || user?.role;
-    const resolvedRainbowProp = propRainbowEnabled !== undefined 
-        ? propRainbowEnabled 
-        : user?.rainbowNameEnabled;
+    const resolvedUserId = userId ?? user?.userId ?? user?.id;
+    const resolvedRole = role ?? user?.role ?? user?.roles ?? user?.authorities;
+    const resolvedRainbowProp = propRainbowEnabled !== undefined
+        ? propRainbowEnabled
+        : user?.rainbowNameEnabled
+            ?? user?.rainbowEnabled
+            ?? user?.isRainbowNameEnabled;
 
     const isAdmin = explicitIsAdmin !== undefined 
         ? explicitIsAdmin 

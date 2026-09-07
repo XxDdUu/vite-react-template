@@ -272,7 +272,10 @@ export default function Friends() {
                                                     <div className="friend-name-row">
                                                         <AdminDisplayName
                                                             username={friend.username}
+                                                            userId={friend.userId ?? friend.id}
                                                             role={friend.role}
+                                                            rainbowNameEnabled={friend.rainbowNameEnabled ?? friend.rainbowEnabled ?? friend.isRainbowNameEnabled}
+                                                            className="friend-admin-name"
                                                             nameStyle={{ fontWeight: 600 }}
                                                         />
                                                         <span className="flag">🇻🇳</span>
@@ -447,12 +450,16 @@ export default function Friends() {
                                     </div>
                                 </div>
                                 <div>
+
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+
                                         <AdminDisplayName
                                             username={selectedPlayerStats.username}
+                                            userId={selectedPlayerStats.userId ?? selectedPlayerStats.id}
                                             role={selectedPlayerStats.role}
-                                            showBadge={selectedPlayerStats.role === 'ROLE_ADMIN'}
-                                            nameStyle={{ fontSize: '1.4rem', fontWeight: 'bold' }}
+                                            rainbowNameEnabled={selectedPlayerStats.rainbowNameEnabled ?? selectedPlayerStats.rainbowEnabled ?? selectedPlayerStats.isRainbowNameEnabled}
+                                            className="friend-admin-name"
+                                            nameStyle={{ fontSize: '1.2rem', fontWeight: 'bold' }}
                                         />
                                         <span style={{ fontSize: '1.25rem' }}>{getFlagEmoji(selectedPlayerStats.countryCode)}</span>
                                     </div>

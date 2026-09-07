@@ -448,7 +448,14 @@ export default function MainMenu() {
                                             <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', background: '#4ade80', borderRadius: '50%', border: '2px solid var(--bg-dark)' }}></div>
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <AdminDisplayName username={friend.username} role={friend.role} nameStyle={{ fontSize: '0.9rem', fontWeight: '600' }} />
+                                            <AdminDisplayName
+                                                username={friend.username}
+                                                userId={friend.userId ?? friend.id}
+                                                role={friend.role}
+                                                rainbowNameEnabled={friend.rainbowNameEnabled ?? friend.rainbowEnabled ?? friend.isRainbowNameEnabled}
+                                                className="friend-admin-name"
+                                                nameStyle={{ fontSize: '0.9rem', fontWeight: '600' }}
+                                            />
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{friend.rating}</span>
                                         </div>
                                     </div>

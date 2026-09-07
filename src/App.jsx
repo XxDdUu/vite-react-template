@@ -82,7 +82,12 @@ const GlobalSocket = ({ children }) => {
                     }
                 } else if (msg.type === 'ADMIN_PROFILE_UPDATED') {
                     // Update admin rainbow status reactively across the entire application
-                    const enabled = Boolean(msg.rainbowNameEnabled);
+                    const enabled = Boolean(
+                        msg.rainbowNameEnabled
+                        ?? msg.rainbowEnabled
+                        ?? msg.isRainbowNameEnabled
+                        ?? msg.enabled
+                    );
                     if (msg.adminId != null) {
                         setAdminRainbowStatus(msg.adminId, enabled);
                     }

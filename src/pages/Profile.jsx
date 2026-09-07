@@ -74,7 +74,14 @@ export default function Profile() {
                 const statsData = await UserService.getStats(userData.userId);
                 setStats(statsData);
                 
-                const isRainbow = Boolean(userData?.rainbowNameEnabled ?? statsData?.rainbowNameEnabled);
+                const isRainbow = Boolean(
+                    userData?.rainbowNameEnabled
+                    ?? userData?.rainbowEnabled
+                    ?? userData?.isRainbowNameEnabled
+                    ?? statsData?.rainbowNameEnabled
+                    ?? statsData?.rainbowEnabled
+                    ?? statsData?.isRainbowNameEnabled
+                );
                 setRainbowEnabled(isRainbow);
                 setAdminRainbowStatus(userData.userId, isRainbow);
                 if (userData.username) {
