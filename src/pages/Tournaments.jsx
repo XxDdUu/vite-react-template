@@ -15,11 +15,8 @@ export default function Tournaments() {
 
     useEffect(() => {
         const checkToken = async () => {
-            const token = await AuthService.getValidToken();
-            if (!token) {
-                navigate('/login');
-                return;
-            }
+            const token = localStorage.getItem('accessToken');
+            if (!token) return;
             const payload = AuthService.parseToken(token);
             if (payload) {
                 setUsername(payload.username || 'Người chơi');

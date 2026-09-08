@@ -15,20 +15,30 @@ export const AuthService = {
         const response = await axios.post(`${getApiBaseUrl()}${BASE_URL}/refresh`, {}, {
             withCredentials: true
         });
+        const token = response.data.token || response.data.accessToken;
+        if (token) {
+            localStorage.setItem("accessToken", token);
+        }
         return response.data;
     },
     getValidToken: async () => {
-    let token = localStorage.getItem("accessToken");
+        let token = localStorage.getItem("accessToken");
 
-        if (!token) {
+        if (!token || token === "undefined" || token === "null") {
+            localStorage.removeItem("accessToken");
             return null;
         }
 
         if (AuthService.isTokenExpired(token)) {
             try {
                 const res = await AuthService.refreshToken();
-                token = res.accessToken;
-                localStorage.setItem("accessToken", token);
+                token = res.token || res.accessToken;
+                if (token) {
+                    localStorage.setItem("accessToken", token);
+                } else {
+                    localStorage.removeItem("accessToken");
+                    return null;
+                }
             } catch (err) {
                 localStorage.removeItem("accessToken");
                 return null;
@@ -44,8 +54,10 @@ export const AuthService = {
             withCredentials: true
         });
 
-        const token = response.data.accessToken;
-        localStorage.setItem("accessToken", token);
+        const token = response.data.token || response.data.accessToken;
+        if (token) {
+            localStorage.setItem("accessToken", token);
+        }
 
         return response.data;
     },
@@ -78,12 +90,18 @@ export const AuthService = {
             { idToken }, 
             { withCredentials: true }
         );
+        const token = response.data.token || response.data.accessToken;
+        if (token) {
+            localStorage.setItem("accessToken", token);
+        }
         return response.data;
     },
 
     parseToken: (token) => {
+        if (!token || token === 'undefined' || token === 'null') return null;
         try {
             const base64Url = token.split('.')[1];
+            if (!base64Url) return null;
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);

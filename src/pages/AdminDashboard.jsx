@@ -43,8 +43,8 @@ export default function AdminDashboard() {
     const [activeSection, setActiveSection] = useState('stats'); // stats, users, messages, tournaments, pairings
 
     useEffect(() => {
-        const checkToken = async () => {
-            const token = await AuthService.getValidToken();
+        const checkToken = () => {
+            const token = localStorage.getItem('accessToken');
             if (!token) {
                 navigate('/login');
                 return;

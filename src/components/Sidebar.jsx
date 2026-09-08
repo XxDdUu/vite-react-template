@@ -5,6 +5,7 @@ import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
 import { AdminService } from '../services/AdminService';
 import { socketClient } from '../services/SocketService';
+import { useAuth } from '../contexts/AuthContext';
 
 import ThemeCustomizer from './ThemeCustomizer';
 import AdminDisplayName, { checkIsAdmin } from './AdminDisplayName';
@@ -15,6 +16,7 @@ import friendsIcon from '../assets/friends.svg';
 export default function Sidebar({ username }) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { logout } = useAuth();
     const token = localStorage.getItem('accessToken');
     const payload = token ? AuthService.parseToken(token) : null;
     const tokenUsername = payload?.username || payload?.preferred_username || payload?.sub;
@@ -64,13 +66,11 @@ export default function Sidebar({ username }) {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('accessToken');
         localStorage.removeItem('username');
         localStorage.removeItem('rating');
         localStorage.removeItem('countryCode');
 
-        socketClient.disconnect();
-
+        logout();
         navigate('/login');
     };
 

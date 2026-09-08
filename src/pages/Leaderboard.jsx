@@ -51,11 +51,8 @@ export default function Leaderboard() {
 
     useEffect(() => {
         const init = async () => {
-            const token = await AuthService.getValidToken();
-            if (!token) {
-                navigate('/login');
-                return;
-            }
+            const token = localStorage.getItem('accessToken');
+            if (!token) return;
 
             const payload = AuthService.parseToken(token);
             if (payload) {

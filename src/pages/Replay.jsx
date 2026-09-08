@@ -23,12 +23,8 @@ export default function Replay() {
     useEffect(() => {
         let active = true;
         const init = async () => {
-            const token = await AuthService.getValidToken();
-            if (!active) return;
-            if (!token) {
-                navigate('/login');
-                return;
-            }
+            const token = localStorage.getItem('accessToken');
+            if (!active || !token) return;
             const payload = AuthService.parseToken(token);
             if (!active) return;
             if (payload) {

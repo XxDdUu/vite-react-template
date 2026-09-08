@@ -89,13 +89,10 @@ export default function MainMenu() {
                 }, 0);
             }
 
-            const token = await AuthService.getValidToken();
-            if (!token) {
-                navigate('/login');
-                return;
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                socketClient.connect();
             }
-
-            socketClient.connect();
 
             const payload = AuthService.parseToken(token);
             if (payload) {

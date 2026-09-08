@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
+import { useAuth } from '../contexts/AuthContext';
 import '../index.css';
 
 export default function Login() {
@@ -18,10 +19,11 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { isAuthenticated, login: authLogin, googleLogin: authGoogleLogin } = useAuth();
 
     useEffect(() => {
-        if (localStorage.getItem('accessToken')) {
-            navigate('/menu');
+        if (isAuthenticated) {
+            navigate('/menu', { replace: true });
         }
 
         /* global google */
@@ -41,19 +43,16 @@ export default function Login() {
                 );
             }
         }
-    }, [forgotMode]);
+    }, [forgotMode, isAuthenticated, navigate]);
 
     const handleGoogleResponse = async (response) => {
         setLoading(true);
         setError('');
         try {
-            const data = await AuthService.googleLogin(response.credential);
-            if (data && data.token) {
-                localStorage.setItem('accessToken', data.token);
-                navigate('/menu');
-            }
+            await authGoogleLogin(response.credential);
+            navigate('/menu', { replace: true });
         } catch (err) {
-            setError(err.response?.data?.message || 'Đăng nhập bằng Google thất bại');
+            setError(err.response?.data?.message || err.message || 'Đăng nhập bằng Google thất bại');
         } finally {
             setLoading(false);
         }
@@ -64,13 +63,8 @@ export default function Login() {
         setLoading(true);
         setError('');
         try {
-            const data = await AuthService.login(identifier, password);
-            if (data && data.token) {
-                localStorage.setItem('accessToken', data.token);
-                navigate('/menu');
-            } else {
-                setError('Đăng nhập thất bại. Không nhận được token.');
-            }
+            await authLogin(identifier, password);
+            navigate('/menu', { replace: true });
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'Đăng nhập thất bại');
         } finally {
