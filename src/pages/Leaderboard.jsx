@@ -5,10 +5,13 @@ import { AuthService } from '../services/AuthService';
 import '../index.css';
 import Sidebar from '../components/Sidebar';
 import { FriendService } from '../services/FriendService';
-import AdminDisplayName from '../components/AdminDisplayName';
+import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
+import { useTranslation } from '../contexts/I18nContext';
+import { isImageUrl, formatAvatarUrl } from '../services/MinioService';
 
 export default function Leaderboard() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [user, setUser] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -126,8 +129,8 @@ export default function Leaderboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <span style={{ fontSize: '2.5rem' }}>🏆</span>
                         <div>
-                            <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#ffffff', fontWeight: '800' }}>Bảng xếp hạng</h1>
-                            <p style={{ margin: '4px 0 0 0', color: '#8b92a5', fontSize: '0.9rem' }}>Thách đấu các kỳ thủ đứng đầu hệ thống</p>
+                            <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#ffffff', fontWeight: '800' }}>{t('nav.leaderboard', 'Bảng xếp hạng')}</h1>
+                            <p style={{ margin: '4px 0 0 0', color: '#8b92a5', fontSize: '0.9rem' }}>{t('menu.playOnlineDesc', 'Thách đấu các kỳ thủ đứng đầu hệ thống')}</p>
                         </div>
                     </div>
                     <button 
@@ -281,6 +284,13 @@ export default function Leaderboard() {
                                                 <td style={{ padding: '14px 16px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <span style={{ fontSize: '1.25rem' }}>{getFlagEmoji(player.countryCode)}</span>
+                                                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', background: '#312e2b', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0 }}>
+                                                            {isImageUrl(player.avatarUrl || player.avatar) ? (
+                                                                <img src={formatAvatarUrl(player.avatarUrl || player.avatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            ) : (
+                                                                player.avatarUrl || player.avatar || (player.username ? player.username.charAt(0).toUpperCase() : '👤')
+                                                            )}
+                                                        </div>
                                                         <AdminDisplayName
                                                             username={player.username}
                                                             role={player.role}
@@ -353,9 +363,13 @@ export default function Leaderboard() {
                                         width: '64px', height: '64px', borderRadius: '50%',
                                         background: 'linear-gradient(135deg, #6366f1, #a855f7)',
                                         display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                        fontSize: '2rem', color: '#ffffff', fontWeight: 'bold'
+                                        fontSize: '2rem', color: '#ffffff', fontWeight: 'bold', overflow: 'hidden'
                                     }}>
-                                        {selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US'}
+                                        {isImageUrl(selectedPlayerStats.avatarUrl || selectedPlayerStats.avatar) ? (
+                                            <img src={formatAvatarUrl(selectedPlayerStats.avatarUrl || selectedPlayerStats.avatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            selectedPlayerStats.avatarUrl || selectedPlayerStats.avatar || (selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US')
+                                        )}
                                     </div>
                                 </div>
                                 <div>

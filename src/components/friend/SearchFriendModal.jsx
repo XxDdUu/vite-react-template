@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { FriendService } from '../../services/FriendService';
+import { useTranslation } from '../../contexts/I18nContext';
+import { isImageUrl, formatAvatarUrl } from '../../services/MinioService';
 
 export default function SearchFriendModal({ isOpen, onClose, currentUserId, onActionSuccess }) {
+    const { t } = useTranslation();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -117,21 +120,28 @@ export default function SearchFriendModal({ isOpen, onClose, currentUserId, onAc
 
                 .search-close-btn {
                     background: rgba(255, 255, 255, 0.05);
-                    border: none;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                     color: #8b92a5;
-                    font-size: 1.25rem;
+                    font-size: 1.1rem;
                     cursor: pointer;
                     width: 32px;
                     height: 32px;
+                    min-width: 32px;
+                    max-width: 32px;
                     border-radius: 50%;
-                    display: flex;
+                    display: inline-flex;
                     align-items: center;
                     justify-content: center;
+                    line-height: 1;
+                    padding: 0;
+                    flex: 0 0 32px;
+                    margin-left: auto;
                     transition: all 0.2s;
                 }
 
                 .search-close-btn:hover {
                     background: rgba(239, 68, 68, 0.15);
+                    border-color: rgba(239, 68, 68, 0.3);
                     color: #ef4444;
                 }
 
@@ -296,7 +306,7 @@ export default function SearchFriendModal({ isOpen, onClose, currentUserId, onAc
             `}</style>
             <div className="search-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="search-modal-header">
-                    <h2>Tìm kiếm bạn mới</h2>
+                    <h2>{t('friends.search', 'Tìm bạn mới')}</h2>
                     <button className="search-close-btn" onClick={onClose}>&times;</button>
                 </div>
                 
@@ -307,12 +317,12 @@ export default function SearchFriendModal({ isOpen, onClose, currentUserId, onAc
                             <input
                                 type="text"
                                 className="search-input-field"
-                                placeholder="Nhập tên người dùng cần tìm..."
+                                placeholder={t('friends.searchPlaceholder', 'Nhập tên người dùng cần tìm...')}
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                             />
                             <button type="submit" className="search-submit-button">
-                                Tìm kiếm
+                                {t('common.search', 'Tìm kiếm')}
                             </button>
                         </div>
                     </form>
@@ -321,17 +331,21 @@ export default function SearchFriendModal({ isOpen, onClose, currentUserId, onAc
                 <div className="search-results-list">
                     {loading ? (
                         <div style={{ textAlign: 'center', padding: '30px', color: '#8b92a5' }}>
-                            Đang tìm kiếm...
+                            {t('common.loading', 'Đang tìm kiếm...')}
                         </div>
                     ) : results.length === 0 ? (
                         <div className="empty-state" style={{ color: '#8b92a5', textAlign: 'center', padding: '30px' }}>
-                            {query ? 'Không tìm thấy người dùng nào.' : 'Nhập tên người dùng ở trên để bắt đầu tìm kiếm.'}
+                            {query ? t('friends.noFriendsFound', 'Không tìm thấy người dùng nào.') : t('friends.searchPlaceholder', 'Nhập tên người dùng ở trên để bắt đầu tìm kiếm.')}
                         </div>
                     ) : (
                         results.map(u => (
                             <div key={u.userId} className="search-result-card">
-                                <div className="search-avatar-circle">
-                                    {u.username.charAt(0).toUpperCase()}
+                                <div className="search-avatar-circle" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {isImageUrl(u.avatarUrl || u.avatar) ? (
+                                        <img src={formatAvatarUrl(u.avatarUrl || u.avatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        u.avatarUrl || u.avatar || (u.username ? u.username.charAt(0).toUpperCase() : '👤')
+                                    )}
                                 </div>
                                 <div className="search-friend-details">
                                     <span className="search-friend-name">{u.username}</span>
@@ -344,7 +358,7 @@ export default function SearchFriendModal({ isOpen, onClose, currentUserId, onAc
                                             onClick={() => handleSendRequest(u.userId)}
                                             disabled={actionLoadingId === u.userId}
                                         >
-                                            {actionLoadingId === u.userId ? 'Đang gửi...' : 'Kết bạn'}
+                                            {actionLoadingId === u.userId ? t('common.loading', 'Đang gửi...') : t('friends.add', 'Kết bạn')}
                                         </button>
                                     )}
                                     {u.friendshipStatus === 'PENDING_SENT' && (
@@ -352,7 +366,7 @@ export default function SearchFriendModal({ isOpen, onClose, currentUserId, onAc
                                             className="search-status-badge"
                                             disabled
                                         >
-                                            Đang chờ
+                                            {t('friends.pendingSent', 'Đang chờ')}
                                         </button>
                                     )}
                                     {u.friendshipStatus === 'PENDING_RECEIVED' && (
@@ -361,12 +375,12 @@ export default function SearchFriendModal({ isOpen, onClose, currentUserId, onAc
                                             onClick={() => handleAcceptRequest(u.userId)}
                                             disabled={actionLoadingId === u.userId}
                                         >
-                                            {actionLoadingId === u.userId ? '...' : 'Chấp nhận'}
+                                            {actionLoadingId === u.userId ? '...' : t('friends.accept', 'Chấp nhận')}
                                         </button>
                                     )}
                                     {u.friendshipStatus === 'ACCEPTED' && (
                                         <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 600, paddingRight: '10px' }}>
-                                            ✓ Bạn bè
+                                            ✓ {t('nav.friends', 'Bạn bè')}
                                         </span>
                                     )}
                                 </div>

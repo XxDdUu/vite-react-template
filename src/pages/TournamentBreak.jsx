@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useTranslation } from '../contexts/I18nContext';
 import { TournamentService } from '../services/TournamentService';
 import { socketClient } from '../services/SocketService';
 import { AuthService } from '../services/AuthService';
 import '../index.css';
 
 export default function TournamentBreak() {
+    const { t } = useTranslation();
     const { tournamentId } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -106,8 +108,8 @@ export default function TournamentBreak() {
                     
                     {/* Header */}
                     <div>
-                        <h1 style={{ color: 'var(--accent-blue-hover)', fontSize: '2rem', margin: '0 0 5px 0' }}>THỜI GIAN NGHỈ GIỮA VÒNG</h1>
-                        <p style={{ color: 'var(--text-muted)' }}>Vui lòng chuẩn bị tinh thần cho vòng tiếp theo</p>
+                        <h1 style={{ color: 'var(--accent-blue-hover)', fontSize: '2rem', margin: '0 0 5px 0' }}>{t('tournament.breakTimeTitle')}</h1>
+                        <p style={{ color: 'var(--text-muted)' }}>{t('tournament.breakTimeSub')}</p>
                     </div>
 
                     {/* Clock countdown */}
@@ -116,24 +118,24 @@ export default function TournamentBreak() {
                             {formatTime(timeLeft)}
                         </div>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '5px' }}>
-                            Vòng tiếp theo sẽ tự động bắt đầu sau khi đồng hồ đếm ngược kết thúc.
+                            {t('tournament.breakTimeDesc')}
                         </p>
                     </div>
 
                     {/* Standings table */}
                     <div style={{ marginTop: '20px', textAlign: 'left' }}>
-                        <h3 style={{ marginBottom: '15px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>🏆 Bảng Xếp Hạng Hiện Tại</h3>
+                        <h3 style={{ marginBottom: '15px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>{t('tournament.currentStandings')}</h3>
                         
                         {loading ? (
-                            <p style={{ color: 'var(--text-muted)' }}>Đang tải bảng xếp hạng...</p>
+                            <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
                         ) : (
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                                        <th style={{ padding: '8px' }}>Hạng</th>
-                                        <th style={{ padding: '8px' }}>Kỳ thủ</th>
+                                        <th style={{ padding: '8px' }}>{t('tournament.rank')}</th>
+                                        <th style={{ padding: '8px' }}>{t('tournament.participants')}</th>
                                         <th style={{ padding: '8px' }}>Elo</th>
-                                        <th style={{ padding: '8px', textAlign: 'center' }}>Điểm</th>
+                                        <th style={{ padding: '8px', textAlign: 'center' }}>{t('tournament.score')}</th>
                                         <th style={{ padding: '8px', textAlign: 'center' }}>BH</th>
                                         <th style={{ padding: '8px', textAlign: 'center' }}>SB</th>
                                     </tr>
@@ -141,7 +143,7 @@ export default function TournamentBreak() {
                                 <tbody>
                                     {standings.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>Chưa có thông tin xếp hạng.</td>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>{t('tournament.noTournaments')}</td>
                                         </tr>
                                     ) : (
                                         standings.map((p, idx) => (
@@ -162,7 +164,7 @@ export default function TournamentBreak() {
 
                     {/* Back to tournament list button */}
                     <div style={{ marginTop: '30px' }}>
-                        <button className="secondary-btn" onClick={() => navigate('/tournaments')}>Quay lại danh sách giải đấu</button>
+                        <button className="secondary-btn" onClick={() => navigate('/tournaments')}>{t('tournament.backToList')}</button>
                     </div>
 
                 </div>

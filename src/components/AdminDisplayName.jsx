@@ -162,7 +162,10 @@ export default function AdminDisplayName({
     style = {},
     nameStyle = {}
 }) {
-    const displayName = username || name || user?.username || user?.name || 'Người chơi';
+    const rawDisplayName = username || name || user?.username || user?.name || 'Người chơi';
+    const displayName = (typeof rawDisplayName === 'string' && rawDisplayName.includes('@'))
+        ? rawDisplayName.split('@')[0]
+        : rawDisplayName;
     const resolvedUserId = userId ?? user?.userId ?? user?.id;
     const resolvedRole = role ?? user?.role ?? user?.roles ?? user?.authorities;
     const resolvedRainbowProp = propRainbowEnabled !== undefined

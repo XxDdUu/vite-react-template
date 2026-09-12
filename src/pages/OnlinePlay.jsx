@@ -3,10 +3,13 @@ import api from '../services/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { socketClient } from '../services/SocketService';
 import { AuthService } from '../services/AuthService';
+import { UserService } from '../services/UserService';
 import { FriendService } from '../services/FriendService';
 import Sidebar from '../components/Sidebar';
 import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
 import EmojiBox from '../components/EmojiBox';
+import { useTranslation } from '../contexts/I18nContext';
+import { isImageUrl, formatAvatarUrl } from '../services/MinioService';
 import '../index.css';
 
 const MATCH_STATES = {
@@ -22,6 +25,7 @@ const MATCH_STATES = {
 export default function OnlinePlay() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
     const initialMatchType = location.state?.matchType || 'rapid';
     const isTournament = location.state?.gameStartMsg?.isTournament || false;
 
@@ -33,6 +37,25 @@ export default function OnlinePlay() {
     const [gameId, setGameId] = useState(null);
     const [side, setSide] = useState('WHITE');
     const [opponent, setOpponent] = useState(null);
+    const [myAvatar, setMyAvatar] = useState('👤');
+
+    useEffect(() => {
+        const loadMyAvatar = () => {
+            const token = localStorage.getItem('accessToken');
+            if (!token) return;
+            const payload = AuthService.parseToken(token);
+            if (payload?.userId) {
+                const saved = localStorage.getItem(`chess-avatar-${payload.userId}`);
+                if (saved) {
+                    setMyAvatar(saved);
+                }
+            }
+        };
+        loadMyAvatar();
+        window.addEventListener('profile-update', loadMyAvatar);
+        return () => window.removeEventListener('profile-update', loadMyAvatar);
+    }, []);
+
     const [countdown, setCountdown] = useState(5);
     const [hasAccepted, setHasAccepted] = useState(false);
     const [confirmCountdown, setConfirmCountdown] = useState(10);
@@ -85,10 +108,26 @@ export default function OnlinePlay() {
             const token = localStorage.getItem('accessToken');
             if (!token) return;
 
+            const formatName = (str) => {
+                if (!str) return 'Người chơi';
+                const s = String(str).trim();
+                return s.includes('@') ? s.split('@')[0] : s;
+            };
+
             const payload = AuthService.parseToken(token);
             if (payload) {
-                setUsername(payload.username || payload.sub || 'Người chơi');
+                const savedName = localStorage.getItem('username');
+                setUsername(formatName(savedName || payload.username || payload.sub || 'Người chơi'));
                 setMyRole(payload.role || null);
+            }
+
+            try {
+                const me = await UserService.getMe();
+                if (me?.username) {
+                    setUsername(formatName(me.username));
+                }
+            } catch (e) {
+                console.warn('Could not fetch user me in OnlinePlay:', e);
             }
 
             socketClient.addListener(handleSocketMessage);
@@ -100,7 +139,9 @@ export default function OnlinePlay() {
                 setOpponent({
                     id: msg.opponent,
                     name: msg.opponentName || 'Đối thủ',
-                    rating: msg.opponentRating || 1200
+                    rating: msg.opponentRating || 1200,
+                    avatarUrl: msg.opponentAvatarUrl || msg.opponentAvatar || msg.avatarUrl || msg.avatar,
+                    avatar: msg.opponentAvatar || msg.avatar
                 });
                 setGameId(msg.gameId);
                 setWhiteTime(msg.timeLimit || 600);
@@ -243,7 +284,9 @@ export default function OnlinePlay() {
                 setOpponent({
                     id: msg.opponentId,
                     name: msg.opponentName,
-                    rating: msg.opponentRating
+                    rating: msg.opponentRating,
+                    avatarUrl: msg.opponentAvatarUrl || msg.opponentAvatar || msg.avatarUrl || msg.avatar,
+                    avatar: msg.opponentAvatar || msg.avatar
                 });
                 setWhiteTime(msg.timeWhite || 600);
                 setBlackTime(msg.timeBlack || 600);
@@ -275,7 +318,9 @@ export default function OnlinePlay() {
                     id: msg.opponentId,
                     name: msg.opponentName,
                     country: msg.opponentCountry,
-                    rating: msg.opponentRating
+                    rating: msg.opponentRating,
+                    avatarUrl: msg.opponentAvatarUrl || msg.opponentAvatar || msg.avatarUrl || msg.avatar,
+                    avatar: msg.opponentAvatar || msg.avatar
                 });
                 startConfirmCountdown(msg.timeout || 10);
                 break;
@@ -298,7 +343,9 @@ export default function OnlinePlay() {
                     ...prev,
                     id: msg.opponent || prev?.id,
                     name: msg.opponentName || prev?.name || 'Đối thủ',
-                    rating: msg.opponentRating || prev?.rating || 1200
+                    rating: msg.opponentRating || prev?.rating || 1200,
+                    avatarUrl: msg.opponentAvatarUrl || msg.opponentAvatar || msg.avatarUrl || msg.avatar || prev?.avatarUrl || prev?.avatar,
+                    avatar: msg.opponentAvatar || msg.avatar || prev?.avatar
                 }));
                 setGameId(msg.gameId);
                 setMatchState(MATCH_STATES.COUNTDOWN);
@@ -676,8 +723,12 @@ export default function OnlinePlay() {
                             {/* Opponent Info Bar */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div className={`avatar-small ${checkIsAdmin(opponent?.role, opponent?.name) ? 'admin-avatar-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
-                                        <span className="icon">👤</span>
+                                    <div className={`avatar-small ${checkIsAdmin(opponent?.role, opponent?.name) ? 'admin-avatar-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem', overflow: 'hidden' }}>
+                                        {isImageUrl(opponent?.avatarUrl || opponent?.avatar) ? (
+                                            <img src={formatAvatarUrl(opponent?.avatarUrl || opponent?.avatar)} alt={opponent?.name || 'Đối thủ'} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <span className="icon">{opponent?.avatarUrl || opponent?.avatar || '👤'}</span>
+                                        )}
                                     </div>
                                     <AdminDisplayName
                                         username={opponent?.name || 'Đối thủ'}
@@ -705,8 +756,12 @@ export default function OnlinePlay() {
                             {/* Your Info Bar */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>
-                                        <span className="icon">👤</span>
+                                    <div className={`avatar-small ${checkIsAdmin(myRole, username) ? 'admin-avatar-ring' : ''}`} style={{ width: '32px', height: '32px', fontSize: '0.9rem', overflow: 'hidden' }}>
+                                        {isImageUrl(myAvatar) ? (
+                                            <img src={formatAvatarUrl(myAvatar)} alt={username} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <span className="icon">{myAvatar || '👤'}</span>
+                                        )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <AdminDisplayName
@@ -924,7 +979,13 @@ export default function OnlinePlay() {
                             <div className="found-ui">
                                 <div className="match-found-badge">ĐÃ TÌM THẤY TRẬN!</div>
                                 <div className="opponent-card" style={{ margin: '20px 0' }}>
-                                    <div className="opponent-avatar">👤</div>
+                                    <div className="opponent-avatar" style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {isImageUrl(opponent?.avatarUrl || opponent?.avatar) ? (
+                                            <img src={formatAvatarUrl(opponent?.avatarUrl || opponent?.avatar)} alt={opponent?.name || 'Đối thủ'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <span>{opponent?.avatarUrl || opponent?.avatar || '👤'}</span>
+                                        )}
+                                    </div>
                                     <div className="opponent-details">
                                         <h2 className="opponent-name">{opponent?.name}</h2>
                                         <p className="opponent-stats">🌍 {opponent?.country || 'Earth'} • ⭐ Rating: {opponent?.rating}</p>

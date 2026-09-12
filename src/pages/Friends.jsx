@@ -10,9 +10,12 @@ import friendsIcon from '../assets/friends.svg';
 import PendingFriendModal from '../components/friend/PendingFriendModal';
 import SearchFriendModal from '../components/friend/SearchFriendModal';
 import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
+import { useTranslation } from '../contexts/I18nContext';
+import { isImageUrl, formatAvatarUrl } from '../services/MinioService';
 
 export default function Friends() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [user, setUser] = useState(null);
     const [friends, setFriends] = useState([]);
     const [pending, setPending] = useState([]);
@@ -202,7 +205,7 @@ export default function Friends() {
                 <div className="friends-main-col">
                     <div className="friends-header">
                         <img src={friendsIcon} alt="Friends" style={{ width: '32px', height: '32px' }} />
-                        <h1>Bạn bè</h1>
+                        <h1>{t('friends.title', 'Bạn bè')}</h1>
                     </div>
 
                     {/* Action Grid */}
@@ -210,14 +213,14 @@ export default function Friends() {
                         <div className="friend-action-btn" onClick={() => setIsSearchModalOpen(true)}>
                             <div className="friend-action-content">
                                 <span className="icon">👤+</span>
-                                <span>Tìm bạn mới</span>
+                                <span>{t('friends.search', 'Tìm bạn mới')}</span>
                             </div>
                             <span>&gt;</span>
                         </div>
                         <div className="friend-action-btn" onClick={() => setIsPendingModalOpen(true)}>
                             <div className="friend-action-content">
-                                <span className="icon">📨</span>
-                                <span>Lời mời kết bạn</span>
+                                <span className="icon">📩</span>
+                                <span>{t('friends.requests', 'Lời mời kết bạn')}</span>
                                 {pending.length > 0 && (
                                     <span className="pending-badge">{pending.length}</span>
                                 )}
@@ -256,8 +259,12 @@ export default function Friends() {
                                     .map(friend => (
                                         <div key={friend.userId} className="friend-item">
                                             <div className="friend-info" onClick={() => handlePlayerClick(friend.userId)} style={{ cursor: 'pointer' }}>
-                                                <div className={`friend-avatar ${checkIsAdmin(friend.role, friend.username) ? 'admin-avatar-ring' : ''}`} style={{ borderRadius: '50%' }}>
-                                                    {friend.username.charAt(0).toUpperCase()}
+                                                <div className={`friend-avatar ${checkIsAdmin(friend.role, friend.username) ? 'admin-avatar-ring' : ''}`} style={{ borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    {isImageUrl(friend.avatarUrl || friend.avatar) ? (
+                                                        <img src={formatAvatarUrl(friend.avatarUrl || friend.avatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        friend.avatarUrl || friend.avatar || (friend.username ? friend.username.charAt(0).toUpperCase() : '👤')
+                                                    )}
                                                     <div style={{
                                                         position: 'absolute', bottom: '2px', right: '2px',
                                                         width: '10px', height: '10px',
@@ -441,9 +448,13 @@ export default function Friends() {
                                         width: '64px', height: '64px', borderRadius: '50%',
                                         background: 'linear-gradient(135deg, #6366f1, #a855f7)',
                                         display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                        fontSize: '2rem', color: '#ffffff', fontWeight: 'bold'
+                                        fontSize: '2rem', color: '#ffffff', fontWeight: 'bold', overflow: 'hidden'
                                     }}>
-                                        {selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US'}
+                                        {isImageUrl(selectedPlayerStats.avatarUrl || selectedPlayerStats.avatar) ? (
+                                            <img src={formatAvatarUrl(selectedPlayerStats.avatarUrl || selectedPlayerStats.avatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            selectedPlayerStats.avatarUrl || selectedPlayerStats.avatar || (selectedPlayerStats.username ? selectedPlayerStats.username.substring(0, 2).toUpperCase() : 'US')
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -466,11 +477,8 @@ export default function Friends() {
                                 </div>
                             </div>
                             <button 
+                                className="close-btn"
                                 onClick={() => setSelectedPlayerStats(null)}
-                                style={{
-                                    background: 'transparent', border: 'none', color: '#8b92a5',
-                                    fontSize: '1.5rem', cursor: 'pointer', outline: 'none'
-                                }}
                             >
                                 &times;
                             </button>

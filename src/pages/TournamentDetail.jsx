@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useTranslation } from '../contexts/I18nContext';
 import { TournamentService } from '../services/TournamentService';
 import { ReplayService } from '../services/ReplayService';
 import { AuthService } from '../services/AuthService';
+import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
+import { isImageUrl, formatAvatarUrl } from '../services/MinioService';
 import '../index.css';
 
 // Mock Constants and Data Helpers for visual testing / server down fallbacks
@@ -98,6 +101,7 @@ const getMockMyPairing = (username, userId) => ({
 });
 
 export default function TournamentDetail() {
+    const { t } = useTranslation();
     const { tournamentId } = useParams();
     const navigate = useNavigate();
     const [username, setUsername] = useState('Người chơi');
@@ -565,16 +569,25 @@ export default function TournamentDetail() {
                                                                 background: isCurrentUser ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
                                                                 transition: 'background 0.2s'
                                                             }}>
-                                                                <td style={{ padding: '12px 10px', fontWeight: 'bold', textAlign: 'center' }}>{rankDisplay}</td>
-                                                                <td style={{ padding: '12px 10px' }}>
-                                                                    <span style={{ 
-                                                                        fontWeight: isCurrentUser ? 'bold' : '500', 
-                                                                        color: isCurrentUser ? 'var(--accent-blue-hover)' : 'var(--text-primary)' 
-                                                                    }}>
-                                                                        {p.username}
-                                                                    </span>
-                                                                    {isCurrentUser && <span style={{ fontSize: '0.75rem', color: 'var(--accent-blue-hover)', marginLeft: '6px', fontWeight: 'bold' }}>(Bạn)</span>}
-                                                                </td>
+                                                                 <td style={{ padding: '12px 10px', fontWeight: 'bold', textAlign: 'center' }}>{rankDisplay}</td>
+                                                                 <td style={{ padding: '12px 10px' }}>
+                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                         <div style={{ width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', background: '#312e2b', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', flexShrink: 0 }}>
+                                                                             {isImageUrl(p.avatarUrl || p.avatar) ? (
+                                                                                 <img src={formatAvatarUrl(p.avatarUrl || p.avatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                             ) : (
+                                                                                 p.avatarUrl || p.avatar || (p.username ? p.username.charAt(0).toUpperCase() : '👤')
+                                                                             )}
+                                                                         </div>
+                                                                         <AdminDisplayName
+                                                                             username={p.username}
+                                                                             role={p.role}
+                                                                             rainbowNameEnabled={p.rainbowNameEnabled}
+                                                                             nameStyle={{ fontWeight: isCurrentUser ? 'bold' : '500', color: isCurrentUser ? 'var(--accent-blue-hover)' : 'var(--text-primary)' }}
+                                                                         />
+                                                                         {isCurrentUser && <span style={{ fontSize: '0.75rem', color: 'var(--accent-blue-hover)', marginLeft: '4px', fontWeight: 'bold' }}>(Bạn)</span>}
+                                                                     </div>
+                                                                 </td>
                                                                 <td style={{ padding: '12px 10px', color: 'var(--text-muted)' }}>{p.initialRating}</td>
                                                                 <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 'bold', color: 'var(--accent-blue-hover)', fontSize: '0.95rem' }}>{p.currentScore}</td>
                                                                 <td style={{ padding: '12px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>{p.buchholz}</td>

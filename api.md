@@ -15,6 +15,10 @@ Tài liệu này ghi lại các điểm cuối (endpoints) API được định 
 
 ### Dịch vụ Người dùng (`UserService.js`)
 - `GET /api/user/{userId}/stats`: Lấy các chỉ số thắng/thua/hòa và điểm Elo.
+- `PATCH /api/user/me/profile`: Cập nhật thông tin hồ sơ (avatar URL, bio, quốc gia).
+
+### Dịch vụ Lưu trữ MinIO (`MinioService.js`)
+- `POST /api/minio/upload`: Tải tệp ảnh đại diện (avatar) lên MinIO Storage (multipart/form-data).
 
 ### Dịch vụ Bạn bè (`FriendService.js`)
 - `GET /api/friends/list?userId={id}`: Lấy danh sách bạn bè hiện tại.

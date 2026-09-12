@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
+import { useTranslation } from '../contexts/I18nContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function Register() {
     const [email, setEmail] = useState('');
@@ -15,6 +17,7 @@ export default function Register() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const countries = ["VN - Việt Nam", "US - Hoa Kỳ", "UK - Vương quốc Anh", "JP - Nhật Bản", "KR - Hàn Quốc", "CN - Trung Quốc"];
 
@@ -60,7 +63,7 @@ export default function Register() {
     return (
         <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <header>
-                <h1>Tạo <span>Tài khoản</span></h1>
+                <h1>{t('auth.register', 'Đăng ký')} <span>AlphaOne</span></h1>
             </header>
             <div className="glass-panel" style={{ width: '450px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {!otpStep ? (
@@ -70,19 +73,19 @@ export default function Register() {
                             <input type="email" style={inputStyle} value={email} onChange={e => setEmail(e.target.value)} required />
                         </div>
                         <div className="control-group">
-                            <label>Tên đăng nhập</label>
+                            <label>{t('auth.emailOrUsername', 'Tên đăng nhập')}</label>
                             <input type="text" style={inputStyle} value={username} onChange={e => setUsername(e.target.value)} required />
                         </div>
                         <div className="control-group">
-                            <label>Mật khẩu</label>
+                            <label>{t('auth.password', 'Mật khẩu')}</label>
                             <input type="password" style={inputStyle} value={password} onChange={e => setPassword(e.target.value)} required />
                         </div>
                         <div className="control-group">
-                            <label>Xác nhận mật khẩu</label>
+                            <label>{t('auth.confirmPassword', 'Xác nhận mật khẩu')}</label>
                             <input type="password" style={inputStyle} value={confirm} onChange={e => setConfirm(e.target.value)} required />
                         </div>
                         <div className="control-group">
-                            <label>Quốc gia</label>
+                            <label>{t('profile.country', 'Quốc gia')}</label>
                             <select style={inputStyle} value={country} onChange={e => setCountry(e.target.value)}>
                                 {countries.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
@@ -92,14 +95,14 @@ export default function Register() {
 
                         <div className="btn-group" style={{marginTop: '10px'}}>
                             <button type="submit" className="primary-btn" disabled={loading}>
-                                {loading ? 'Đang xử lý...' : 'Đăng ký'}
+                                {loading ? t('common.loading', 'Đang xử lý...') : t('auth.register', 'Đăng ký')}
                             </button>
                         </div>
                     </form>
                 ) : (
                     <form onSubmit={handleVerifyOTP} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         <div className="control-group">
-                            <label>Nhập mã xác thực (OTP) đã gửi đến {email}</label>
+                            <label>{t('auth.enterOtp', 'Nhập mã OTP khôi phục')} ({email})</label>
                             <input type="text" style={inputStyle} value={otp} onChange={e => setOtp(e.target.value)} required />
                         </div>
                         
@@ -107,7 +110,7 @@ export default function Register() {
 
                         <div className="btn-group" style={{marginTop: '10px'}}>
                             <button type="submit" className="primary-btn" disabled={loading}>
-                                {loading ? 'Đang xác thực...' : 'Xác nhận OTP'}
+                                {loading ? t('common.loading', 'Đang xử lý...') : t('common.confirm', 'Xác nhận')}
                             </button>
                         </div>
                     </form>
@@ -115,7 +118,7 @@ export default function Register() {
 
                 <div style={{textAlign: 'center', marginTop: '10px'}}>
                     <Link to="/login" style={{color: 'var(--accent-blue-hover)', textDecoration: 'none'}}>
-                        Đã có tài khoản? Đăng nhập.
+                        {t('auth.hasAccount', 'Đã có tài khoản?')} {t('auth.login', 'Đăng nhập')}
                     </Link>
                 </div>
             </div>

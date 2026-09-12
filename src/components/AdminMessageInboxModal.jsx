@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../contexts/I18nContext';
 import { AdminService } from '../services/AdminService';
 import AdminDisplayName from './AdminDisplayName';
 
@@ -10,6 +11,7 @@ const MESSAGE_TYPES = {
 };
 
 export default function AdminMessageInboxModal({ userId, isOpen, onClose, onRefreshCount }) {
+    const { t } = useTranslation();
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -86,7 +88,7 @@ export default function AdminMessageInboxModal({ userId, isOpen, onClose, onRefr
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontSize: '1.4rem' }}>📨</span>
                         <h2 style={{ margin: 0, fontSize: '1.25rem', border: 'none', padding: 0 }}>
-                            Tin nhắn
+                            {t('nav.messages')}
                         </h2>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -97,7 +99,7 @@ export default function AdminMessageInboxModal({ userId, isOpen, onClose, onRefr
                                 className="action-link-btn"
                                 style={{ fontSize: '0.75rem', textTransform: 'none' }}
                             >
-                                Đánh dấu đã đọc
+                                {t('admin.markAllRead')}
                             </button>
                         )}
                         <button
@@ -126,13 +128,12 @@ export default function AdminMessageInboxModal({ userId, isOpen, onClose, onRefr
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '55vh', paddingRight: '4px' }}>
                     {loading ? (
                         <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                            Đang tải tin nhắn...
+                            {t('common.loading')}
                         </div>
                     ) : messages.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                             <span style={{ fontSize: '2.5rem' }}>📭</span>
-                            <span style={{ fontSize: '0.95rem' }}>Hộp thư của bạn trống</span>
-                            <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Bạn chưa có tin nhắn nào từ Quản trị viên</span>
+                            <span style={{ fontSize: '0.95rem' }}>{t('friends.noFriendsFound')}</span>
                         </div>
                     ) : (
                         messages.map((msg) => {

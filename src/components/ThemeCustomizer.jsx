@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTheme, PRESET_THEMES } from '../contexts/ThemeContext';
+import { useTranslation } from '../contexts/I18nContext';
 
 export default function ThemeCustomizer() {
     const { currentTheme, selectPreset, updateColor } = useTheme();
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -11,10 +13,10 @@ export default function ThemeCustomizer() {
             <button
                 className={`theme-toggle-btn ${isOpen ? 'active' : ''}`}
                 onClick={() => setIsOpen(prev => !prev)}
-                title="Tùy chỉnh giao diện"
+                title={t('nav.theme', 'Giao diện')}
             >
                 <span style={{ fontSize: '1rem' }}>🎨</span>
-                <span className="theme-toggle-label">Giao diện</span>
+                <span className="theme-toggle-label">{t('nav.theme', 'Giao diện')}</span>
                 <span className={`theme-toggle-chevron ${isOpen ? 'open' : ''}`}>›</span>
             </button>
 

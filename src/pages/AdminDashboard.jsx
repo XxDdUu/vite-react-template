@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useTranslation } from '../contexts/I18nContext';
 import { AdminService } from '../services/AdminService';
 import { TournamentService } from '../services/TournamentService';
 import { ReplayService } from '../services/ReplayService';
@@ -10,6 +11,7 @@ import AdminDirectMessageModal from '../components/admin/AdminDirectMessageModal
 import '../index.css';
 
 export default function AdminDashboard() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [username, setUsername] = useState('Quản trị viên');
     const [stats, setStats] = useState(null);
@@ -140,15 +142,34 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleBanUser = async (userId) => {
-        if (!window.confirm("Bạn có chắc chắn muốn KHÓA tài khoản này?")) return;
+    // Ban Modal state
+    const [banTargetUser, setBanTargetUser] = useState(null);
+    const [banReasonInput, setBanReasonInput] = useState('Vi phạm Quy định dịch vụ');
+    const [banDescriptionInput, setBanDescriptionInput] = useState('Tài khoản của bạn đã bị khóa do vi phạm Quy định của hệ thống.');
+
+    const handleOpenBanModal = (u) => {
+        const target = u || selectedUser;
+        if (!target) return;
+        setBanTargetUser(target);
+        setBanReasonInput('Vi phạm Quy định dịch vụ');
+        setBanDescriptionInput('Tài khoản của bạn đã bị Quản trị viên khóa do vi phạm điều khoản sử dụng. Vui lòng xem thông báo từ Admin để biết chi tiết.');
+    };
+
+    const handleConfirmBan = async (e) => {
+        if (e) e.preventDefault();
+        if (!banTargetUser) return;
         try {
-            await AdminService.banUser(userId);
-            alert("Đã khóa tài khoản thành công!");
-            handleSelectUser(userId);
+            await AdminService.banUser(banTargetUser.userId, {
+                reason: banReasonInput,
+                description: banDescriptionInput
+            });
+            alert(`Đã khóa tài khoản ${banTargetUser.username} thành công!`);
+            const targetId = banTargetUser.userId;
+            setBanTargetUser(null);
+            handleSelectUser(targetId);
             handleSearchUsers();
         } catch (err) {
-            alert("Thao tác thất bại!");
+            alert("Thao tác khóa tài khoản thất bại!");
         }
     };
 
@@ -250,7 +271,7 @@ export default function AdminDashboard() {
             <div className="friends-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
                 <div className="friends-header" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        🛡️ Hệ thống Quản trị (Admin Panel)
+                        {t('admin.title')}
                     </h1>
                     <span className="admin-badge-pill" style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
                         🛡️ Admin
@@ -259,13 +280,13 @@ export default function AdminDashboard() {
 
                 {/* Main Navigation tabs */}
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button onClick={() => setActiveSection('stats')} className={activeSection === 'stats' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>📊 Thống kê chung</button>
-                    <button onClick={() => { setActiveSection('users'); handleSearchUsers(); }} className={activeSection === 'users' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>👥 Quản lý người dùng</button>
+                    <button onClick={() => setActiveSection('stats')} className={activeSection === 'stats' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>📊 {t('admin.dashboard')}</button>
+                    <button onClick={() => { setActiveSection('users'); handleSearchUsers(); }} className={activeSection === 'users' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>👥 {t('admin.usersTab')}</button>
                     <button onClick={() => { setActiveSection('messages'); loadAllDirectMessages(); }} className={activeSection === 'messages' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>
-                        📨 Tin nhắn trực tiếp {allDirectMessages.length > 0 && `(${allDirectMessages.length})`}
+                        📨 {t('admin.dmTab')} {allDirectMessages.length > 0 && `(${allDirectMessages.length})`}
                     </button>
-                    <button onClick={() => setActiveSection('tournaments')} className={activeSection === 'tournaments' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>🏆 Quản lý giải đấu</button>
-                    <button onClick={() => setActiveSection('pairings')} className={activeSection === 'pairings' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>⚔️ Kết quả cặp đấu</button>
+                    <button onClick={() => setActiveSection('tournaments')} className={activeSection === 'tournaments' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>🏆 {t('admin.tournamentsTab')}</button>
+                    <button onClick={() => setActiveSection('pairings')} className={activeSection === 'pairings' ? 'primary-btn' : 'secondary-btn'} style={{ padding: '10px 20px', flex: 'none' }}>⚔️ {t('admin.pairingsTab')}</button>
                 </div>
 
                 {/* Stats Panel */}
@@ -431,7 +452,7 @@ export default function AdminDashboard() {
                                                     Mở khóa tài khoản
                                                 </button>
                                             ) : (
-                                                <button className="primary-btn" style={{ width: '100%', background: '#ef4444' }} onClick={() => handleBanUser(selectedUser.userId)}>
+                                                <button className="primary-btn" style={{ width: '100%', background: '#ef4444' }} onClick={() => handleOpenBanModal(selectedUser)}>
                                                     Khóa tài khoản
                                                 </button>
                                             )}
@@ -822,6 +843,129 @@ export default function AdminDashboard() {
                     );
                 })()}
             </div>
+
+            {banTargetUser && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        backdropFilter: 'blur(6px)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px'
+                    }}
+                >
+                    <div
+                        style={{
+                            background: 'linear-gradient(145deg, #1f1212 0%, #120909 100%)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            borderRadius: '16px',
+                            maxWidth: '520px',
+                            width: '100%',
+                            padding: '28px',
+                            boxShadow: '0 20px 50px rgba(239, 68, 68, 0.25)',
+                            color: '#ffffff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '16px'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0, color: '#f87171', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                ⛔ {t('admin.banModalTitle', 'Khóa tài khoản người dùng')}
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setBanTargetUser(null)}
+                                style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '1.2rem', cursor: 'pointer' }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div style={{ fontSize: '0.9rem', color: '#d1d5db', background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            {t('admin.banModalUserLabel', 'Tài khoản')}: <strong style={{ color: '#ffffff' }}>{banTargetUser.username}</strong> ({banTargetUser.email})
+                        </div>
+
+                        <form onSubmit={handleConfirmBan} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            <div className="control-group">
+                                <label style={{ color: '#fca5a5', fontWeight: '600', fontSize: '0.85rem' }}>📌 {t('admin.banReasonLabel', 'Lý do khóa tài khoản (Ban Reason)')}:</label>
+                                <input
+                                    type="text"
+                                    className="custom-input"
+                                    value={banReasonInput}
+                                    onChange={(e) => setBanReasonInput(e.target.value)}
+                                    placeholder={t('admin.banReasonPlaceholder', 'Ví dụ: Vi phạm Quy định dịch vụ, Gian lận...')}
+                                    required
+                                    style={{ borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                                />
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                    {[
+                                        t('admin.presetReasonTerms', 'Vi phạm Quy định dịch vụ'),
+                                        t('admin.presetReasonCheating', 'Gian lận / Phần mềm thứ 3'),
+                                        t('admin.presetReasonInappropriate', 'Ngôn từ không phù hợp'),
+                                        t('admin.presetReasonSpam', 'Spam / Quấy rối')
+                                    ].map(reasonOption => (
+                                        <button
+                                            key={reasonOption}
+                                            type="button"
+                                            onClick={() => setBanReasonInput(reasonOption)}
+                                            style={{
+                                                background: banReasonInput === reasonOption ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.05)',
+                                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                borderRadius: '6px',
+                                                color: '#fca5a5',
+                                                fontSize: '0.72rem',
+                                                padding: '3px 8px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {reasonOption}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="control-group">
+                                <label style={{ color: '#fca5a5', fontWeight: '600', fontSize: '0.85rem' }}>📝 {t('admin.banDescriptionLabel', 'Mô tả chi tiết vi phạm (Ban Description)')}:</label>
+                                <textarea
+                                    className="custom-input"
+                                    rows="4"
+                                    value={banDescriptionInput}
+                                    onChange={(e) => setBanDescriptionInput(e.target.value)}
+                                    placeholder={t('admin.banDescriptionPlaceholder', 'Nhập chi tiết thông tin vi phạm để hiển thị cho người dùng khi bị khóa...')}
+                                    required
+                                    style={{ resize: 'none', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                                ></textarea>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <button
+                                    type="submit"
+                                    className="primary-btn"
+                                    style={{ flex: 1, background: '#ef4444', fontWeight: '700' }}
+                                >
+                                    ⛔ {t('admin.confirmBan', 'Xác nhận khóa tài khoản')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setBanTargetUser(null)}
+                                    className="secondary-btn"
+                                    style={{ flex: 'none', padding: '10px 18px' }}
+                                >
+                                    {t('admin.cancel', 'Hủy')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <AdminDirectMessageModal
                 user={dmTargetUser}

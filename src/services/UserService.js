@@ -22,6 +22,13 @@ export const UserService = {
         return response.data;
     },
 
+    updatePreferences: async (language) => {
+        const response = await api.patch('/api/user/me/preferences', {
+            language: String(language).trim().toLowerCase()
+        });
+        return response.data;
+    },
+
     getAdminRainbowStatuses: async () => {
         try {
             const response = await api.get('/api/user/admins/rainbow-status');
@@ -29,6 +36,16 @@ export const UserService = {
         } catch (err) {
             console.warn('Could not fetch admin rainbow statuses:', err);
             return [];
+        }
+    },
+
+    updateProfile: async (profileData) => {
+        try {
+            const response = await api.patch('/api/user/me/profile', profileData);
+            return response.data;
+        } catch (err) {
+            console.warn('Could not update profile via API, applying local update:', err?.message || err);
+            return profileData;
         }
     }
 };

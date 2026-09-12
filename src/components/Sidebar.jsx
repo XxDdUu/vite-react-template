@@ -4,12 +4,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
 import { AdminService } from '../services/AdminService';
+import { isImageUrl, formatAvatarUrl } from '../services/MinioService';
 import { socketClient } from '../services/SocketService';
 import { useAuth } from '../contexts/AuthContext';
 
 import ThemeCustomizer from './ThemeCustomizer';
+import LanguageSelector from './LanguageSelector';
 import AdminDisplayName, { checkIsAdmin } from './AdminDisplayName';
 import AdminMessageInboxModal from './AdminMessageInboxModal';
+import { useTranslation } from '../contexts/I18nContext';
 
 import friendsIcon from '../assets/friends.svg';
 
@@ -17,6 +20,7 @@ export default function Sidebar({ username }) {
     const navigate = useNavigate();
     const location = useLocation();
     const { logout } = useAuth();
+    const { t, syncUserLanguage } = useTranslation();
     const token = localStorage.getItem('accessToken');
     const payload = token ? AuthService.parseToken(token) : null;
     const tokenUsername = payload?.username || payload?.preferred_username || payload?.sub;
@@ -26,8 +30,9 @@ export default function Sidebar({ username }) {
         return rating ? Number(rating) : null;
     });
 
+    const rawUsername = username || localStorage.getItem('username') || tokenUsername || 'Khách';
     const [displayUsername, setDisplayUsername] = useState(
-        username || localStorage.getItem('username') || tokenUsername || 'Khách'
+        rawUsername.includes('@') ? rawUsername.split('@')[0] : rawUsername
     );
 
     const [sidebarAvatar, setSidebarAvatar] = useState('👤');
@@ -211,6 +216,10 @@ export default function Sidebar({ username }) {
                         stats.countryCode
                     );
                 }
+
+                if (stats.preferredLanguage) {
+                    syncUserLanguage(stats.preferredLanguage);
+                }
             } catch (err) {
                 console.error(
                     'Failed to fetch sidebar user stats:',
@@ -287,9 +296,13 @@ export default function Sidebar({ username }) {
                 <div
                     className="mobile-avatar"
                     onClick={() => navigate('/profile')}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                    {sidebarAvatar}
+                    {isImageUrl(sidebarAvatar) ? (
+                        <img src={formatAvatarUrl(sidebarAvatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        sidebarAvatar
+                    )}
                 </div>
             </div>
 
@@ -363,7 +376,7 @@ export default function Sidebar({ username }) {
                             isActive('/menu') ? 'active' : ''
                         }`}
                         onClick={handleNavClick('/menu')}
-                        title="Chơi"
+                        title={t('nav.play', 'Chơi')}
                     >
                         <span
                             className="icon"
@@ -377,7 +390,7 @@ export default function Sidebar({ username }) {
                         </span>
 
                         <span className="nav-text">
-                            Chơi
+                            {t('nav.play', 'Chơi')}
                         </span>
                     </a>
 
@@ -389,14 +402,14 @@ export default function Sidebar({ username }) {
                             isActive('/tournaments') ? 'active' : ''
                         }`}
                         onClick={handleNavClick('/tournaments')}
-                        title="Giải đấu"
+                        title={t('nav.tournaments', 'Giải đấu')}
                     >
                         <span className="icon">
                             🏆
                         </span>
 
                         <span className="nav-text">
-                            Giải đấu
+                            {t('nav.tournaments', 'Giải đấu')}
                         </span>
                     </a>
 
@@ -408,14 +421,14 @@ export default function Sidebar({ username }) {
                             isActive('/leaderboard') ? 'active' : ''
                         }`}
                         onClick={handleNavClick('/leaderboard')}
-                        title="Bảng xếp hạng"
+                        title={t('nav.leaderboard', 'Bảng xếp hạng')}
                     >
                         <span className="icon">
                             📊
                         </span>
 
                         <span className="nav-text">
-                            Bảng xếp hạng
+                            {t('nav.leaderboard', 'Bảng xếp hạng')}
                         </span>
                     </a>
 
@@ -427,7 +440,7 @@ export default function Sidebar({ username }) {
                             isActive('/friends') ? 'active' : ''
                         }`}
                         onClick={handleNavClick('/friends')}
-                        title="Bạn bè"
+                        title={t('nav.friends', 'Bạn bè')}
                     >
                         <span className="icon">
                             <img
@@ -441,7 +454,7 @@ export default function Sidebar({ username }) {
                         </span>
 
                         <span className="nav-text">
-                            Bạn bè
+                            {t('nav.friends', 'Bạn bè')}
                         </span>
                     </a>
 
@@ -454,7 +467,7 @@ export default function Sidebar({ username }) {
                             e.preventDefault();
                             setIsInboxOpen(true);
                         }}
-                        title="Hộp thư thông báo"
+                        title={t('nav.messages', 'Tin nhắn')}
                     >
                         <span
                             className="icon"
@@ -466,7 +479,7 @@ export default function Sidebar({ username }) {
                         </span>
 
                         <span className="nav-text">
-                            Tin nhắn
+                            {t('nav.messages', 'Tin nhắn')}
                         </span>
 
                         {unreadCount > 0 && (
@@ -497,14 +510,14 @@ export default function Sidebar({ username }) {
                                     : ''
                             }`}
                             onClick={handleNavClick('/admin')}
-                            title="Admin"
+                            title={t('nav.admin', 'Admin')}
                         >
                             <span className="icon">
                                 🛡️
                             </span>
 
                             <span className="nav-text">
-                                Admin
+                                {t('nav.admin', 'Admin')}
                             </span>
                         </a>
                     )}
@@ -525,7 +538,7 @@ export default function Sidebar({ username }) {
 
                         <input
                             type="text"
-                            placeholder="Tìm kiếm"
+                            placeholder={t('nav.search', 'Tìm kiếm')}
                             className="search-input"
                         />
                     </div>
@@ -547,10 +560,15 @@ export default function Sidebar({ username }) {
                                         display: 'flex',
                                         justifyContent: 'center',
                                         alignItems: 'center',
-                                        fontSize: '1.25rem'
+                                        fontSize: '1.25rem',
+                                        overflow: 'hidden'
                                     }}
                                 >
-                                    {sidebarAvatar}
+                                    {isImageUrl(sidebarAvatar) ? (
+                                        <img src={formatAvatarUrl(sidebarAvatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        sidebarAvatar
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -560,10 +578,15 @@ export default function Sidebar({ username }) {
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                    fontSize: '1.25rem'
+                                    fontSize: '1.25rem',
+                                    overflow: 'hidden'
                                 }}
                             >
-                                {sidebarAvatar}
+                                {isImageUrl(sidebarAvatar) ? (
+                                    <img src={formatAvatarUrl(sidebarAvatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    sidebarAvatar
+                                )}
                             </div>
                         )}
 
@@ -618,6 +641,18 @@ export default function Sidebar({ username }) {
                         </div>
                     </div>
 
+                    {/* Language Selector */}
+
+                    <div
+                        className="sidebar-theme-customizer"
+                        style={{ marginBottom: '8px' }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                        }}
+                    >
+                        <LanguageSelector />
+                    </div>
+
                     {/* Theme */}
 
                     <div
@@ -637,14 +672,14 @@ export default function Sidebar({ username }) {
                             e.stopPropagation();
                             handleLogout();
                         }}
-                        title="Đăng xuất"
+                        title={t('auth.logout', 'Đăng xuất')}
                     >
                         <span className="icon">
                             🚪
                         </span>
 
                         <span className="logout-text">
-                            Đăng xuất
+                            {t('auth.logout', 'Đăng xuất')}
                         </span>
                     </button>
                 </div>

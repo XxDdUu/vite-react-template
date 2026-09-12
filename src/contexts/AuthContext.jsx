@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AuthService } from '../services/AuthService';
+import { UserService } from '../services/UserService';
 import { socketClient } from '../services/SocketService';
 
 export const AuthState = {
@@ -12,12 +13,14 @@ const AuthContext = createContext({
     authState: AuthState.LOADING,
     isLoading: true,
     isAuthenticated: false,
+    isBanned: false,
     user: null,
     token: null,
     login: async () => {},
     googleLogin: async () => {},
     logout: () => {},
-    checkAuth: async () => {}
+    checkAuth: async () => {},
+    setUser: () => {}
 });
 
 export const AuthProvider = ({ children }) => {
@@ -25,12 +28,22 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(null);
 
-    const applyAuthSuccess = useCallback((validToken) => {
-        const payload = AuthService.parseToken(validToken);
+    const applyAuthSuccess = useCallback(async (validToken) => {
+        const payload = AuthService.parseToken(validToken) || {};
         setToken(validToken);
         setUser(payload);
         setAuthState(AuthState.AUTHENTICATED);
         socketClient.connect();
+
+        // Fetch current user details from API to sync live isBanned status
+        try {
+            const currentUser = await UserService.getMe();
+            if (currentUser) {
+                setUser(prev => ({ ...prev, ...currentUser }));
+            }
+        } catch (err) {
+            console.debug('Could not fetch getMe in AuthContext:', err);
+        }
     }, []);
 
     const applyUnauthenticated = useCallback(() => {
@@ -98,12 +111,14 @@ export const AuthProvider = ({ children }) => {
         authState,
         isLoading: authState === AuthState.LOADING,
         isAuthenticated: authState === AuthState.AUTHENTICATED,
+        isBanned: Boolean(user?.isBanned || user?.is_banned),
         user,
         token,
         login,
         googleLogin,
         logout,
-        checkAuth
+        checkAuth,
+        setUser
     };
 
     return (

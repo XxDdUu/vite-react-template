@@ -4,10 +4,12 @@ import Sidebar from '../components/Sidebar';
 import { TournamentService } from '../services/TournamentService';
 import { ReplayService } from '../services/ReplayService';
 import { AuthService } from '../services/AuthService';
+import { useTranslation } from '../contexts/I18nContext';
 import '../index.css';
 
 export default function Tournaments() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [username, setUsername] = useState('Người chơi');
     const [userId, setUserId] = useState(null);
     const [tournaments, setTournaments] = useState([]);
@@ -49,7 +51,7 @@ export default function Tournaments() {
                 {/* Main list column */}
                 <div className="friends-main-col" style={{ flex: 1 }}>
                     <div className="friends-header">
-                        <h1>🏆 Giải đấu cờ vua</h1>
+                        <h1>🏆 {t('tournament.title', 'Giải đấu cờ vua')}</h1>
                     </div>
 
                     {/* Filter tabs */}
@@ -61,7 +63,7 @@ export default function Tournaments() {
                                 className={listTab === tab ? 'primary-btn' : 'secondary-btn'}
                                 style={{ padding: '8px 15px', textTransform: 'capitalize', fontSize: '0.85rem' }}
                             >
-                                {tab === 'all' ? 'Tất cả' : tab === 'registering' ? 'Mở đăng ký' : tab === 'ongoing' ? 'Đang diễn ra' : 'Đã kết thúc'}
+                                {tab === 'all' ? t('profile.allResults', 'Tất cả') : tab === 'registering' ? t('tournament.upcoming', 'Mở đăng ký') : tab === 'ongoing' ? t('tournament.ongoing', 'Đang diễn ra') : t('tournament.finished', 'Đã kết thúc')}
                             </button>
                         ))}
                     </div>
@@ -70,7 +72,7 @@ export default function Tournaments() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {filteredTournaments.length === 0 ? (
                             <div className="glass-panel" style={{ width: '100%', textAlign: 'center', padding: '40px' }}>
-                                <p style={{ color: 'var(--text-muted)' }}>Không tìm thấy giải đấu nào.</p>
+                                <p style={{ color: 'var(--text-muted)' }}>{t('common.info', 'Không tìm thấy giải đấu nào.')}</p>
                             </div>
                         ) : (
                             filteredTournaments.map(t => (

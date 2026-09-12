@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../contexts/I18nContext';
+import LanguageSelector from '../components/LanguageSelector';
 import '../index.css';
 
 export default function Login() {
@@ -20,6 +22,7 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { isAuthenticated, login: authLogin, googleLogin: authGoogleLogin } = useAuth();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -123,7 +126,7 @@ export default function Login() {
                 {forgotMode ? (
                     <h1>Khôi phục <span>Mật khẩu</span></h1>
                 ) : (
-                    <h1>Đăng nhập <span>Cờ vua</span></h1>
+                    <h1>{t('auth.login', 'Đăng nhập')} <span>AlphaOne</span></h1>
                 )}
             </header>
             <div className="glass-panel" style={{ width: '400px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -132,7 +135,7 @@ export default function Login() {
                     /* LOGIN MODE */
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         <div className="control-group">
-                            <label>Email hoặc Tên đăng nhập</label>
+                            <label>{t('auth.emailOrUsername', 'Email hoặc Tên đăng nhập')}</label>
                             <input 
                                 type="text" 
                                 style={inputStyle}
@@ -144,13 +147,13 @@ export default function Login() {
 
                         <div className="control-group">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                                <label style={{ flexGrow: 1 }}>Mật khẩu</label>
+                                <label style={{ flexGrow: 1 }}>{t('auth.password', 'Mật khẩu')}</label>
                                 <a 
                                     href="#forgot" 
                                     onClick={(e) => { e.preventDefault(); setForgotMode(true); setError(''); }}
                                     style={{ color: 'var(--accent-blue-hover)', textDecoration: 'none', fontSize: '0.85rem' }}
                                 >
-                                    Quên mật khẩu?
+                                    {t('auth.forgotPassword', 'Quên mật khẩu?')}
                                 </a>
                             </div>
                             <input 
@@ -166,7 +169,7 @@ export default function Login() {
 
                         <div className="btn-group" style={{marginTop: '10px'}}>
                             <button type="submit" className="primary-btn" disabled={loading}>
-                                {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                                {loading ? t('common.loading', 'Đang tải...') : t('auth.login', 'Đăng nhập')}
                             </button>
                         </div>
                         
@@ -176,7 +179,7 @@ export default function Login() {
 
                         <div style={{textAlign: 'center', marginTop: '10px'}}>
                             <Link to="/register" style={{color: 'var(--accent-blue-hover)', textDecoration: 'none'}}>
-                                Chưa có tài khoản? Đăng ký tại đây.
+                                {t('auth.noAccount', 'Chưa có tài khoản?')} {t('auth.registerNow', 'Đăng ký ngay')}
                             </Link>
                         </div>
                     </form>

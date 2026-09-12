@@ -19,10 +19,14 @@ import { AuthService } from './services/AuthService';
 import { UserService } from './services/UserService';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { I18nProvider } from './contexts/I18nContext';
 import './index.css';
 
 import { socketClient } from './services/SocketService';
 import { setAdminRainbowStatus, setAllAdminRainbowStatuses } from './components/AdminDisplayName';
+
+import BannedUserModal from './components/BannedUserModal';
+import AdminMessageInboxModal from './components/AdminMessageInboxModal';
 
 // PrivateRoute wrapper using reactive AuthContext
 const PrivateRoute = ({ children }) => {
@@ -53,7 +57,8 @@ const RootRedirect = () => {
 };
 
 const GlobalSocket = ({ children }) => {
-    const { token } = useAuth();
+    const { token, user, isBanned, logout } = useAuth();
+    const [isInboxOpen, setIsInboxOpen] = React.useState(false);
 
     React.useEffect(() => {
         if (token) {
@@ -117,130 +122,149 @@ const GlobalSocket = ({ children }) => {
             socketClient.removeListener(handleGlobalSocketMessage);
         };
     }, [token]);
-    return children;
+
+    return (
+        <>
+            {children}
+            {isBanned && (
+                <BannedUserModal
+                    isOpen={true}
+                    user={user}
+                    onOpenInbox={() => setIsInboxOpen(true)}
+                    onLogout={logout}
+                />
+            )}
+            <AdminMessageInboxModal
+                isOpen={isInboxOpen}
+                onClose={() => setIsInboxOpen(false)}
+            />
+        </>
+    );
 };
 
 function App() {
     return (
-        <ThemeProvider>
-            <AuthProvider>
-                <Router>
-                    <GlobalSocket>
-                        <Routes>
-                            <Route path="/" element={<RootRedirect />} />
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
-                            <Route
-                                path="/menu"
-                                element={
-                                    <PrivateRoute>
-                                        <MainMenu />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/play-ai"
-                                element={
-                                    <PrivateRoute>
-                                        <AIPlay />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/play-online"
-                                element={
-                                    <PrivateRoute>
-                                        <OnlinePlay />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/profile"
-                                element={
-                                    <PrivateRoute>
-                                        <Profile />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/replay"
-                                element={
-                                    <PrivateRoute>
-                                        <ReplayPage />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/friends"
-                                element={
-                                    <PrivateRoute>
-                                        <Friends />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/leaderboard"
-                                element={
-                                    <PrivateRoute>
-                                        <Leaderboard />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/tournaments"
-                                element={
-                                    <PrivateRoute>
-                                        <Tournaments />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/tournaments/detail/:tournamentId"
-                                element={
-                                    <PrivateRoute>
-                                        <TournamentDetail />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/tournaments/lobby/:tournamentId"
-                                element={
-                                    <PrivateRoute>
-                                        <TournamentLobby />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/tournaments/break/:tournamentId"
-                                element={
-                                    <PrivateRoute>
-                                        <TournamentBreak />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin"
-                                element={
-                                    <PrivateRoute>
-                                        <AdminDashboard />
-                                    </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/replay/:gameId"
-                                element={
-                                    <PrivateRoute>
-                                        <Replay />
-                                    </PrivateRoute>
-                                }
-                            />
-                            {/* Fallback */}
-                            <Route path="*" element={<Navigate to="/login" replace />} />
-                        </Routes>
-                    </GlobalSocket>
-                </Router>
-            </AuthProvider>
-        </ThemeProvider>
+        <I18nProvider>
+            <ThemeProvider>
+                <AuthProvider>
+                    <Router>
+                        <GlobalSocket>
+                            <Routes>
+                                <Route path="/" element={<RootRedirect />} />
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/register" element={<Register />} />
+                                <Route
+                                    path="/menu"
+                                    element={
+                                        <PrivateRoute>
+                                            <MainMenu />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/play-ai"
+                                    element={
+                                        <PrivateRoute>
+                                            <AIPlay />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/play-online"
+                                    element={
+                                        <PrivateRoute>
+                                            <OnlinePlay />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/profile"
+                                    element={
+                                        <PrivateRoute>
+                                            <Profile />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/replay"
+                                    element={
+                                        <PrivateRoute>
+                                            <ReplayPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/friends"
+                                    element={
+                                        <PrivateRoute>
+                                            <Friends />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/leaderboard"
+                                    element={
+                                        <PrivateRoute>
+                                            <Leaderboard />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/tournaments"
+                                    element={
+                                        <PrivateRoute>
+                                            <Tournaments />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/tournaments/detail/:tournamentId"
+                                    element={
+                                        <PrivateRoute>
+                                            <TournamentDetail />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/tournaments/lobby/:tournamentId"
+                                    element={
+                                        <PrivateRoute>
+                                            <TournamentLobby />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/tournaments/break/:tournamentId"
+                                    element={
+                                        <PrivateRoute>
+                                            <TournamentBreak />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin"
+                                    element={
+                                        <PrivateRoute>
+                                            <AdminDashboard />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/replay/:gameId"
+                                    element={
+                                        <PrivateRoute>
+                                            <Replay />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                {/* Fallback */}
+                                <Route path="*" element={<Navigate to="/login" replace />} />
+                            </Routes>
+                        </GlobalSocket>
+                    </Router>
+                </AuthProvider>
+            </ThemeProvider>
+        </I18nProvider>
     );
 }
 

@@ -1362,19 +1362,30 @@ button {
 }
 
 .close-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #8b92a5;
+    font-size: 1.1rem;
     cursor: pointer;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
     padding: 0;
-    flex: none;
-    transition: color 0.2s;
+    flex: 0 0 32px;
+    margin-left: auto;
+    transition: all 0.2s;
 }
 
 .close-btn:hover {
-    color: var(--text-primary);
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
 }
 
 .pending-list {
@@ -2591,7 +2602,29 @@ div[class*=" chessboard-"] {
     .table-container {
         overflow-x: auto !important;
     }
+
+    /* Modal responsiveness on mobile */
+    .lobby-modal-card,
+    .modal-card {
+        width: 95% !important;
+        max-width: 95vw !important;
+        margin: 10px !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+    }
+
+    .time-controls-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* Profile & Replay mobile container adjustment */
+    .custom-scrollbar {
+        height: auto !important;
+        max-height: none !important;
+        padding: 15px !important;
+    }
 }
+
 
 
 

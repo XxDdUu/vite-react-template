@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { AiGameService } from '../services/AiGameService';
 import { AuthService } from '../services/AuthService';
 import Sidebar from '../components/Sidebar';
+import { useTranslation } from '../contexts/I18nContext';
 import '../index.css';
 
 function AIPlay() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [username, setUsername] = useState('Người dùng');
   const [mode, setMode] = useState('human-white'); // 'human-white' or 'human-black'
   const [status, setStatus] = useState('Chọn cài đặt của bạn và nhấp vào Bắt đầu trận đấu');
@@ -471,30 +473,30 @@ function AIPlay() {
       <div className="right-panel">
         {/* Match Settings Panel / Game State Info */}
         <div className="glass-panel" style={{ width: '100%', marginBottom: '20px', boxSizing: 'border-box' }}>
-          <h2 style={{ fontSize: '1.2rem', marginBottom: '15px', color: 'var(--text-primary)' }}>📊 Chi tiết trận đấu</h2>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '15px', color: 'var(--text-primary)' }}>📊 {t('tournament.details', 'Chi tiết trận đấu')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div className="stat-box" style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Mô hình AI</span>
-              <strong>{selectedModel === 'best_model' ? 'Mặc định' : selectedModel}</strong>
+              <span style={{ color: 'var(--text-muted)' }}>{t('ai.modelSelect', 'Mô hình AI')}</span>
+              <strong>{selectedModel === 'best_model' ? t('ai.defaultModel', 'Mặc định') : selectedModel}</strong>
             </div>
             <div className="stat-box" style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Độ khó</span>
-              <strong>{difficulty === 1 ? 'Dễ' : difficulty === 2 ? 'Trung bình' : difficulty === 3 ? 'Khó' : 'Chuyên gia'}</strong>
+              <span style={{ color: 'var(--text-muted)' }}>{t('ai.difficulty', 'Độ khó')}</span>
+              <strong>{difficulty === 1 ? t('ai.easy', 'Dễ') : difficulty === 2 ? t('ai.medium', 'Thường') : difficulty === 3 ? t('ai.hard', 'Khó') : t('ai.expert', 'Chuyên gia')}</strong>
             </div>
             <div className="stat-box" style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Trạng thái</span>
+              <span style={{ color: 'var(--text-muted)' }}>{t('tournament.status', 'Trạng thái')}</span>
               <strong style={{ color: isGameOver ? '#f87171' : isWait.current ? '#fbbf24' : '#4ade80' }}>
-                {isGameOver ? "ĐÃ KẾT THÚC" : isWait.current ? "AI ĐANG NGHĨ..." : "LƯỢT CỦA BẠN"}
+                {isGameOver ? t('game.gameOver', 'ĐÃ KẾT THÚC') : isWait.current ? t('common.loading', 'AI ĐANG NGHĨ...') : t('game.turn', 'LƯỢT CỦA BẠN')}
               </strong>
             </div>
 
             {isGameOver ? (
               <button onClick={() => navigate('/menu')} className="primary-btn" style={{ padding: '12px', fontSize: '0.85rem', marginTop: '10px', width: '100%', fontWeight: 'bold' }}>
-                Quay lại Menu chính ↩️
+                {t('ai.backToMenu', 'Quay lại Menu chính ↩️')}
               </button>
             ) : (
               <button onClick={handleResign} className="secondary-btn" style={{ color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.2)', padding: '12px', fontSize: '0.85rem', marginTop: '10px', width: '100%' }}>
-                Xin thua 🏳️
+                {t('game.resign', 'Xin thua 🏳️')}
               </button>
             )}
           </div>
@@ -502,13 +504,13 @@ function AIPlay() {
 
         {/* Status Info Box / Engine Logs */}
         <div className="glass-panel" style={{ width: '100%', padding: '15px', marginBottom: '20px', boxSizing: 'border-box' }}>
-          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>📡 Phản hồi từ hệ thống AI</span>
+          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>📡 {t('admin.title', 'Phản hồi từ hệ thống AI')}</span>
           <strong style={{ fontSize: '0.95rem', color: '#4ade80', lineHeight: '1.4' }}>{status}</strong>
         </div>
 
         {/* Move History Panel */}
         <div className="glass-panel" style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem' }}>📜 Lịch sử nước đi</h3>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem' }}>📜 {t('game.moveHistory', 'Lịch sử nước đi')}</h3>
           <div style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '12px', overflowY: 'auto' }}>
             {gameHistory.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: '8px', fontSize: '0.9rem', fontFamily: 'monospace' }}>

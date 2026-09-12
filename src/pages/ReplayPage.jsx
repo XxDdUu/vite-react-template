@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useTranslation } from '../contexts/I18nContext';
 import { UserService } from '../services/UserService';
 import '../index.css';
 
 export default function ReplayPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const gameData = location.state?.gameData;
@@ -191,14 +193,14 @@ export default function ReplayPage() {
     const getGameOutcome = () => {
         if (!gameData) return { text: '', color: '', bg: '' };
         const isWhite = gameData.myColor === 'WHITE';
-        if (gameData.result === '1/2-1/2') return { text: 'Hòa 🤝', color: '#9ca3af', bg: 'rgba(156,163,175,0.1)' };
+        if (gameData.result === '1/2-1/2') return { text: `${t('game.drawResult')} 🤝`, color: '#9ca3af', bg: 'rgba(156,163,175,0.1)' };
         
         const whiteWon = gameData.result === '1-0';
         const won = (isWhite && whiteWon) || (!isWhite && !whiteWon);
         
         return won 
-            ? { text: 'Thắng 🏆', color: '#81b64c', bg: 'rgba(129,182,76,0.1)' }
-            : { text: 'Thua ❌', color: '#f87171', bg: 'rgba(248,113,113,0.1)' };
+            ? { text: `${t('game.win')} 🏆`, color: '#81b64c', bg: 'rgba(129,182,76,0.1)' }
+            : { text: `${t('game.loss')} ❌`, color: '#f87171', bg: 'rgba(248,113,113,0.1)' };
     };
 
     if (!gameData) return null;
@@ -217,7 +219,7 @@ export default function ReplayPage() {
 
     return (
         <div className="main-menu-wrapper" style={{ display: 'flex', background: '#1c1a17', minHeight: '100vh', width: '100vw', color: '#fff', overflow: 'hidden' }}>
-            <Sidebar username={user?.username || 'Người chơi'} />
+            <Sidebar username={user?.username || t('game.player')} />
 
             {/* Center Area (Chess Board) */}
             <div className="board-area" style={{ flex: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -232,12 +234,12 @@ export default function ReplayPage() {
                                 </span>
                             </div>
                             <span style={{ fontWeight: '700', fontSize: '1rem', color: '#e3e3e3', fontFamily: '"Outfit", sans-serif' }}>
-                                {gameData.opponentName || 'Đối thủ'}
+                                {gameData.opponentName || t('game.opponent')}
                             </span>
                         </div>
                         <div style={{ background: '#262421', border: '1px solid rgba(255,255,255,0.06)', padding: '5px 10px', borderRadius: '4px', fontSize: '0.8rem', color: '#babfc3', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>{gameData.myColor === 'WHITE' ? '⚫' : '⚪'}</span>
-                            <span>{gameData.myColor === 'WHITE' ? 'ĐEN' : 'TRẮNG'}</span>
+                            <span>{gameData.myColor === 'WHITE' ? t('game.black') : t('game.white')}</span>
                         </div>
                     </div>
 
@@ -251,12 +253,12 @@ export default function ReplayPage() {
                                 <span style={{ fontSize: '1.1rem' }}>👤</span>
                             </div>
                             <span style={{ fontWeight: '700', fontSize: '1rem', color: '#e3e3e3', fontFamily: '"Outfit", sans-serif' }}>
-                                {user?.username || 'Bạn'}
+                                {user?.username || t('common.you')}
                             </span>
                         </div>
                         <div style={{ background: '#262421', border: '1px solid rgba(255,255,255,0.06)', padding: '5px 10px', borderRadius: '4px', fontSize: '0.8rem', color: '#babfc3', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>{gameData.myColor === 'WHITE' ? '⚪' : '⚫'}</span>
-                            <span>{gameData.myColor === 'WHITE' ? 'TRẮNG' : 'ĐEN'}</span>
+                            <span>{gameData.myColor === 'WHITE' ? t('game.white') : t('game.black')}</span>
                         </div>
                     </div>
 
@@ -270,9 +272,9 @@ export default function ReplayPage() {
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'white', fontWeight: '800', fontFamily: '"Outfit", sans-serif' }}>Phân tích ván đấu</h3>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'white', fontWeight: '800', fontFamily: '"Outfit", sans-serif' }}>{t('replay.analysis')}</h3>
                             <span style={{ color: '#babfc3', fontSize: '0.8rem', display: 'block', marginTop: '2px' }}>
-                                vs {gameData.opponentName || 'Máy AI 🤖'}
+                                vs {gameData.opponentName || t('game.bot')}
                             </span>
                         </div>
                         <button 
@@ -291,7 +293,7 @@ export default function ReplayPage() {
                             onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.3)'; }}
                             onMouseLeave={e => { e.currentTarget.style.color = '#babfc3'; e.currentTarget.style.borderColor = '#403d39'; }}
                         >
-                            ← Trở lại
+                            ← {t('common.back')}
                         </button>
                     </div>
 
@@ -307,21 +309,21 @@ export default function ReplayPage() {
                         marginBottom: '15px',
                         border: `1px solid ${outcome.color}22`
                     }}>
-                        Kết quả: {outcome.text} ({gameData.result})
+                        {t('profile.result')}: {outcome.text} ({gameData.result})
                     </div>
 
                     {/* Auto Play Speed Control */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#babfc3', marginBottom: '15px', padding: '0 4px' }}>
-                        <span>Tốc độ phát:</span>
+                        <span>{t('replay.playSpeed')}:</span>
                         <select 
                             value={playSpeed} 
                             onChange={e => setPlaySpeed(Number(e.target.value))} 
                             style={{ padding: '6px 10px', fontSize: '0.8rem', background: '#312e2b', border: '1px solid #403d39', color: 'white', borderRadius: '4px', cursor: 'pointer' }}
                         >
-                            <option value={2000}>Chậm (2.0s)</option>
-                            <option value={1500}>Thường (1.5s)</option>
-                            <option value={1000}>Nhanh (1.0s)</option>
-                            <option value={500}>Cực nhanh (0.5s)</option>
+                            <option value={2000}>{t('replay.slow')}</option>
+                            <option value={1500}>{t('replay.normal')}</option>
+                            <option value={1000}>{t('replay.fast')}</option>
+                            <option value={500}>{t('replay.ultraFast')}</option>
                         </select>
                     </div>
 
@@ -382,14 +384,14 @@ export default function ReplayPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div style={{ textAlign: 'center', padding: '30px', color: '#62605e', fontStyle: 'italic', fontSize: '0.85rem' }}>Không có nước đi nào.</div>
+                            <div style={{ textAlign: 'center', padding: '30px', color: '#62605e', fontStyle: 'italic', fontSize: '0.85rem' }}>{t('replay.noMoves')}</div>
                         )}
                     </div>
 
                     {/* Chess.com Premium Control Bar */}
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', padding: '15px 0 0 0', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '15px' }}>
-                        <button onClick={firstMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title="Về đầu trận">⏮</button>
-                        <button onClick={prevMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title="Lùi 1 nước (ArrowLeft)">◀</button>
+                        <button onClick={firstMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title={t('replay.firstMove')}>⏮</button>
+                        <button onClick={prevMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title={t('replay.prevMove')}>◀</button>
                         
                         <button 
                             onClick={() => setIsPlaying(!isPlaying)} 
@@ -411,17 +413,17 @@ export default function ReplayPage() {
                             }} 
                             onMouseEnter={e => { e.currentTarget.style.background = '#95ca5c'; e.currentTarget.style.transform = 'scale(1.05)'; }} 
                             onMouseLeave={e => { e.currentTarget.style.background = '#81b64c'; e.currentTarget.style.transform = 'scale(1)'; }}
-                            title={isPlaying ? "Tạm dừng" : "Tự động phát"}
+                            title={isPlaying ? t('replay.pause') : t('replay.autoPlay')}
                         >
                             {isPlaying ? "⏸" : "▶"}
                         </button>
 
-                        <button onClick={nextMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title="Tiến 1 nước (ArrowRight)">▶</button>
-                        <button onClick={lastMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title="Đến cuối trận">⏭</button>
+                        <button onClick={nextMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title={t('replay.nextMove')}>▶</button>
+                        <button onClick={lastMove} style={{ background: 'none', border: 'none', color: '#babfc3', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#babfc3'} title={t('replay.lastMove')}>⏭</button>
                     </div>
                     
                     <div style={{ textAlign: 'center', marginTop: '10px', color: '#62605e', fontSize: '0.8rem' }}>
-                        Nước đi: <strong>{currentMoveIndex + 1}</strong> / {replayMoves.length}
+                        {t('replay.movesCount')}: <strong>{currentMoveIndex + 1}</strong> / {replayMoves.length}
                     </div>
                 </div>
             </div>

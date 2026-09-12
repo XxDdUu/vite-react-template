@@ -14,8 +14,8 @@ export const AdminService = {
         const response = await api.get(`/api/admin/users/${userId}`);
         return response.data;
     },
-    banUser: async (userId) => {
-        const response = await api.post(`/api/admin/users/${userId}/ban`);
+    banUser: async (userId, banData = {}) => {
+        const response = await api.post(`/api/admin/users/${userId}/ban`, banData);
         return response.data;
     },
     unbanUser: async (userId) => {

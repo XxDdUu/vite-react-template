@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../contexts/I18nContext';
 import { AdminService } from '../../services/AdminService';
 import AdminDisplayName from '../AdminDisplayName';
 
@@ -37,6 +38,7 @@ const TEMPLATES = [
 ];
 
 export default function AdminDirectMessageModal({ user, adminUsername = 'Quản trị viên', isOpen, onClose, onMessageSent, defaultSendToAll = false }) {
+    const { t } = useTranslation();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [type, setType] = useState('INFO');

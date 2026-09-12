@@ -6,10 +6,12 @@ import { GameService } from '../services/GameService';
 import { FriendService } from '../services/FriendService';
 import { AiGameService } from '../services/AiGameService';
 import { socketClient } from '../services/SocketService';
+import { isImageUrl, formatAvatarUrl } from '../services/MinioService';
 import api from '../services/api';
 import '../index.css';
 import Sidebar from '../components/Sidebar';
-import AdminDisplayName, { checkIsAdmin } from '../components/AdminDisplayName';
+import AdminDisplayName, { checkIsAdmin, getAdminRainbowStatus } from '../components/AdminDisplayName';
+import { useTranslation } from '../contexts/I18nContext';
 
 const getFlagEmoji = (code) => {
     if (!code || code.length !== 2) return '🇻🇳';
@@ -26,6 +28,7 @@ const getFlagEmoji = (code) => {
 export default function MainMenu() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
     const boardRef = useRef(null);
     const [username, setUsername] = useState(localStorage.getItem('username') || 'Khách');
     const [myRole, setMyRole] = useState(null);
@@ -160,9 +163,13 @@ export default function MainMenu() {
             try {
                 const msg = JSON.parse(data);
                 if (msg.type === 'USER_ONLINE') {
-                    setFriends(prev => prev.map(f => f.userId === msg.userId ? { ...f, status: 'ONLINE' } : f));
+                    setFriends(prev => prev.map(f => f.userId === msg.userId ? { ...f, ...msg, status: 'ONLINE' } : f));
                 } else if (msg.type === 'USER_OFFLINE') {
                     setFriends(prev => prev.map(f => f.userId === msg.userId ? { ...f, status: 'OFFLINE' } : f));
+                } else if (msg.type === 'ADMIN_PROFILE_UPDATED' || msg.type === 'USER_RAINBOW_TOGGLED' || msg.type === 'USER_UPDATE') {
+                    const updatedUserId = msg.adminId ?? msg.userId;
+                    const enabled = Boolean(msg.rainbowNameEnabled ?? msg.rainbowEnabled ?? msg.isRainbowNameEnabled ?? msg.enabled);
+                    setFriends(prev => prev.map(f => (f.userId === updatedUserId || String(f.userId) === String(updatedUserId)) ? { ...f, rainbowNameEnabled: enabled, ...msg } : f));
                 } else if (msg.type === 'MATCH_INVITE') {
                     setInviteReceived({ hostId: msg.hostId, hostName: msg.hostName });
                 }
@@ -390,81 +397,105 @@ export default function MainMenu() {
             <div className="right-panel">
                 <div className="glass-panel menu-glass-panel">
                     <div className="panel-header">
-                        <h2>🏆 So tài cờ vua</h2>
+                        <h2>🏆 {t('menu.title', 'So tài cờ vua')}</h2>
                     </div>
                     <div className="action-buttons">
                         <button onClick={() => setIsLobbyOpen(true)} className="action-btn primary-action">
                             <span className="btn-icon">⚡</span>
                             <div className="btn-text">
-                                <strong>Chơi trực tuyến</strong>
-                                <span>Chơi với người khác cùng kĩ năng</span>
+                                <strong>{t('menu.playOnline', 'Chơi trực tuyến')}</strong>
+                                <span>{t('menu.playOnlineDesc', 'Chơi với người khác cùng kĩ năng')}</span>
                             </div>
                         </button>
 
                         <button onClick={() => setIsAiLobbyOpen(true)} className="action-btn secondary-action">
                             <span className="btn-icon">🤖</span>
                             <div className="btn-text">
-                                <strong>Chơi với Bot</strong>
-                                <span>Thách đấu với máy từ mức độ Dễ đến Kiện Tướng</span>
+                                <strong>{t('menu.playBot', 'Chơi với Bot')}</strong>
+                                <span>{t('menu.playBotDesc', 'Thách đấu với máy từ mức độ Dễ đến Kiện Tướng')}</span>
                             </div>
                         </button>
 
                         <button className="action-btn secondary-action" onClick={() => navigate('/friends')}>
                             <span className="btn-icon">🤝</span>
                             <div className="btn-text">
-                                <strong>Chơi với một người bạn</strong>
-                                <span>Mời bạn đấu một ván cờ</span>
+                                <strong>{t('menu.playFriend', 'Chơi với một người bạn')}</strong>
+                                <span>{t('menu.playFriendDesc', 'Mời bạn đấu một ván cờ')}</span>
                             </div>
                         </button>
                     </div>
 
                     <div className="panel-footer">
-                        <a href="#" className="footer-link" onClick={() => navigate('/profile')}>📁 Thông tin & Lịch sử đấu</a>
-                        <a href="#" className="footer-link" onClick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>📊 Bảng xếp hạng</a>
+                        <a href="#" className="footer-link" onClick={() => navigate('/profile')}>📁 {t('menu.history', 'Thông tin & Lịch sử đấu')}</a>
+                        <a href="#" className="footer-link" onClick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>📊 {t('nav.leaderboard', 'Bảng xếp hạng')}</a>
                     </div>
                 </div>
 
                 {/* Friends Zone */}
                 <div className="glass-panel" style={{ marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                        <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Bạn bè trực tuyến</h3>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue)', cursor: 'pointer' }} onClick={() => navigate('/friends')}>Xem tất cả</span>
+                        <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>{t('menu.onlineFriends', 'Bạn bè trực tuyến')}</h3>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue)', cursor: 'pointer' }} onClick={() => navigate('/friends')}>{t('menu.viewAll', 'Xem tất cả')}</span>
                     </div>
                     
                     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {friends.filter(f => f.status === 'ONLINE').length === 0 ? (
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '20px' }}>Không có bạn bè nào trực tuyến</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '20px' }}>{t('menu.noOnlineFriends', 'Không có bạn bè nào trực tuyến')}</p>
                         ) : (
-                            friends.filter(f => f.status === 'ONLINE').map(friend => (
-                                <div key={friend.userId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ width: '32px', height: '32px', background: 'var(--eval-white)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                                {friend.username.charAt(0).toUpperCase()}
+                            friends.filter(f => f.status === 'ONLINE').map(friend => {
+                                const isAdmin = checkIsAdmin(friend.role, friend.username);
+                                const isRainbow = isAdmin && (
+                                    friend.rainbowNameEnabled
+                                    ?? friend.rainbowEnabled
+                                    ?? friend.isRainbowNameEnabled
+                                    ?? getAdminRainbowStatus(friend.userId ?? friend.id, friend.username)
+                                );
+                                return (
+                                    <div key={friend.userId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ position: 'relative', width: '34px', height: '34px', flexShrink: 0 }}>
+                                                <div className={isAdmin ? (isRainbow ? 'admin-avatar-rainbow-ring' : 'admin-avatar-ring') : ''} style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    background: 'rgba(255,255,255,0.06)',
+                                                    borderRadius: '50%',
+                                                    overflow: 'hidden',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '1.1rem',
+                                                    border: '1px solid rgba(255,255,255,0.1)'
+                                                }}>
+                                                    {isImageUrl(friend.avatarUrl || friend.avatar) ? (
+                                                        <img src={formatAvatarUrl(friend.avatarUrl || friend.avatar)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        friend.avatarUrl || friend.avatar || (friend.username ? friend.username.charAt(0).toUpperCase() : '👤')
+                                                    )}
+                                                </div>
+                                                <div style={{ position: 'absolute', bottom: '0px', right: '0px', width: '10px', height: '10px', background: '#4ade80', borderRadius: '50%', border: '2px solid var(--bg-dark)' }}></div>
                                             </div>
-                                            <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '10px', height: '10px', background: '#4ade80', borderRadius: '50%', border: '2px solid var(--bg-dark)' }}></div>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <AdminDisplayName
+                                                    username={friend.username}
+                                                    userId={friend.userId ?? friend.id}
+                                                    role={friend.role}
+                                                    rainbowNameEnabled={isRainbow}
+                                                    className="friend-admin-name"
+                                                    nameStyle={{ fontSize: '0.9rem', fontWeight: '600' }}
+                                                />
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{friend.rating} ELO</span>
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <AdminDisplayName
-                                                username={friend.username}
-                                                userId={friend.userId ?? friend.id}
-                                                role={friend.role}
-                                                rainbowNameEnabled={friend.rainbowNameEnabled ?? friend.rainbowEnabled ?? friend.isRainbowNameEnabled}
-                                                className="friend-admin-name"
-                                                nameStyle={{ fontSize: '0.9rem', fontWeight: '600' }}
-                                            />
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{friend.rating}</span>
-                                        </div>
+                                        <button 
+                                            className="primary-btn" 
+                                            style={{ padding: '5px 10px', fontSize: '0.75rem', flex: 'none' }}
+                                            onClick={() => handleInvite(friend.userId)}
+                                        >
+                                            Mời
+                                        </button>
                                     </div>
-                                    <button 
-                                        className="primary-btn" 
-                                        style={{ padding: '5px 10px', fontSize: '0.75rem', flex: 'none' }}
-                                        onClick={() => handleInvite(friend.userId)}
-                                    >
-                                        Mời
-                                    </button>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
 

@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useTranslation } from '../contexts/I18nContext';
 import { TournamentService } from '../services/TournamentService';
 import { socketClient } from '../services/SocketService';
 import { AuthService } from '../services/AuthService';
 import '../index.css';
 
 export default function TournamentLobby() {
+    const { t } = useTranslation();
     const { tournamentId } = useParams();
     const navigate = useNavigate();
     const [username, setUsername] = useState('Người chơi');
@@ -259,7 +261,7 @@ export default function TournamentLobby() {
             <div className="friends-page-wrapper">
                 <Sidebar username={username} />
                 <div className="friends-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ color: 'white', fontSize: '1.2rem' }}>Đang tải phòng chờ...</div>
+                    <div style={{ color: 'white', fontSize: '1.2rem' }}>{t('common.loading')}</div>
                 </div>
             </div>
         );
@@ -280,35 +282,30 @@ export default function TournamentLobby() {
 
                     {!pairing ? (
                         <div>
-                            <h2 style={{ color: 'var(--text-muted)' }}>Đang đợi phân cặp đấu...</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '10px' }}>Vui lòng giữ kết nối. Trận đấu của bạn sẽ xuất hiện tại đây khi vòng mới bắt đầu.</p>
-                            <button className="secondary-btn" onClick={() => navigate('/tournaments')} style={{ marginTop: '20px' }}>Quay lại</button>
+                            <h2 style={{ color: 'var(--text-muted)' }}>{t('tournament.waitingOpponent')}</h2>
+                            <button className="secondary-btn" onClick={() => navigate('/tournaments')} style={{ marginTop: '20px' }}>{t('common.back')}</button>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                             {/* Round Number Header */}
                             <div>
-                                <h1 style={{ color: 'var(--accent-blue-hover)', fontSize: '2rem', margin: '0 0 5px 0' }}>VÒNG {pairing.roundNumber}</h1>
-                                <p style={{ color: 'var(--text-muted)' }}>Phòng Chờ Điểm Danh Trận Đấu</p>
+                                <h1 style={{ color: 'var(--accent-blue-hover)', fontSize: '2rem', margin: '0 0 5px 0' }}>{t('tournament.round')} {pairing.roundNumber}</h1>
+                                <p style={{ color: 'var(--text-muted)' }}>{t('tournament.lobby')}</p>
                             </div>
 
                             {pairing.isBye ? (
                                 <div className="glass-panel" style={{ background: 'rgba(74, 222, 128, 0.1)', border: '1px solid rgba(74, 222, 128, 0.2)', padding: '30px' }}>
-                                    <h2 style={{ color: '#4ade80', margin: '0 0 10px 0' }}>🎉 Bạn được BYE vòng này!</h2>
-                                    <p style={{ color: 'var(--text-muted)' }}>Bạn tự động nhận được 1.0 điểm mà không cần thi đấu ở vòng này.</p>
-                                    <button className="primary-btn" onClick={() => navigate('/tournaments')} style={{ marginTop: '20px' }}>Quay lại Giải đấu</button>
+                                    <h2 style={{ color: '#4ade80', margin: '0 0 10px 0' }}>🎉 BYE</h2>
+                                    <button className="primary-btn" onClick={() => navigate('/tournaments')} style={{ marginTop: '20px' }}>{t('tournament.backToList')}</button>
                                 </div>
                             ) : isCompleted ? (
                                 <div className="glass-panel" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '30px' }}>
-                                    <h2 style={{ color: '#60a5fa', margin: '0 0 10px 0' }}>✓ Bạn Đã Hoàn Thành Vòng Này</h2>
+                                    <h2 style={{ color: '#60a5fa', margin: '0 0 10px 0' }}>✓ {t('tournament.finished')}</h2>
                                     <p style={{ color: 'white', fontSize: '1.1rem', fontWeight: '500', marginBottom: '15px' }}>
                                         {completedMessage}
                                     </p>
-                                    <p style={{ color: 'var(--text-muted)' }}>
-                                        Đang chờ tất cả các cặp đấu khác kết thúc để ban tổ chức cập nhật kết quả và bước vào vòng tiếp theo. Vui lòng không rời đi.
-                                    </p>
                                     <div style={{ marginTop: '25px', display: 'flex', gap: '15px', justifyContent: 'center' }}>
-                                        <button className="primary-btn" onClick={() => navigate('/tournaments')}>Xem Bảng Xếp Hạng</button>
+                                        <button className="primary-btn" onClick={() => navigate('/tournaments')}>{t('tournament.standings')}</button>
                                     </div>
                                 </div>
                             ) : (
@@ -317,12 +314,12 @@ export default function TournamentLobby() {
                                     <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', gap: '20px' }}>
                                         {/* Player 1 (You) */}
                                         <div className="glass-panel" style={{ flex: 1, padding: '20px', border: pairing.iAmReady ? '1px solid #4ade80' : '1px solid var(--glass-border)' }}>
-                                            <h3 style={{ margin: '0 0 5px 0' }}>Bạn</h3>
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Quân cờ: {pairing.myColor === 'WHITE' ? 'Trắng ⚪' : 'Đen ⚫'}</p>
+                                            <h3 style={{ margin: '0 0 5px 0' }}>{t('common.you')}</h3>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{pairing.myColor === 'WHITE' ? t('game.white') : t('game.black')}</p>
                                             <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                                                 <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: pairing.iAmReady ? '#4ade80' : '#ef4444' }}></span>
                                                 <strong style={{ color: pairing.iAmReady ? '#4ade80' : '#ef4444', fontSize: '0.85rem' }}>
-                                                    {pairing.iAmReady ? 'ĐÃ SẴN SÀNG' : 'CHƯA SẴN SÀNG'}
+                                                    {pairing.iAmReady ? 'READY' : 'NOT READY'}
                                                 </strong>
                                             </div>
                                         </div>
@@ -337,7 +334,7 @@ export default function TournamentLobby() {
                                             <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                                                 <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: pairing.opponentReady ? '#4ade80' : '#ef4444' }}></span>
                                                 <strong style={{ color: pairing.opponentReady ? '#4ade80' : '#ef4444', fontSize: '0.85rem' }}>
-                                                    {pairing.opponentReady ? 'ĐÃ SẴN SÀNG' : 'CHƯA SẴN SÀNG'}
+                                                    {pairing.opponentReady ? 'READY' : 'NOT READY'}
                                                 </strong>
                                             </div>
                                         </div>
@@ -354,16 +351,13 @@ export default function TournamentLobby() {
                                             <div style={{ fontSize: '3rem', fontFamily: 'monospace', fontWeight: 'bold', color: timeLeft < 60 ? '#ef4444' : 'white' }}>
                                                 {formatTime(timeLeft)}
                                             </div>
-                                            <p style={{ color: '#fbbf24', fontSize: '0.85rem', marginTop: '5px' }}>
-                                                ⚠️ Bạn phải ấn nút SẴN SÀNG trước khi thời gian kết thúc để tránh bị xử thua vắng mặt!
-                                            </p>
                                         </div>
                                     )}
 
                                     {/* Action Buttons */}
                                     <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
                                         {isForfeited ? (
-                                            <button className="primary-btn" onClick={() => navigate('/tournaments')}>Quay lại Giải đấu</button>
+                                            <button className="primary-btn" onClick={() => navigate('/tournaments')}>{t('tournament.backToList')}</button>
                                         ) : (
                                             <>
                                                 <button
@@ -372,9 +366,9 @@ export default function TournamentLobby() {
                                                     disabled={pairing.iAmReady}
                                                     style={{ minWidth: '150px', background: pairing.iAmReady ? 'rgba(74, 222, 128, 0.2)' : 'var(--accent-blue)', color: pairing.iAmReady ? '#4ade80' : 'white', cursor: pairing.iAmReady ? 'default' : 'pointer' }}
                                                 >
-                                                    {pairing.iAmReady ? '✓ ĐÃ CHECK IN' : 'SẴN SÀNG'}
+                                                    {pairing.iAmReady ? '✓ READY' : t('tournament.checkIn')}
                                                 </button>
-                                                <button className="secondary-btn" onClick={() => navigate('/tournaments')}>Bảng xếp hạng</button>
+                                                <button className="secondary-btn" onClick={() => navigate('/tournaments')}>{t('tournament.standings')}</button>
                                             </>
                                         )}
                                     </div>
